@@ -16,6 +16,13 @@ RSpec.describe SummonerSyncService, type: :service do
         create(:summoner, game_name: game_name, tag_line: tag_line, last_synced_at: 30.minutes.ago)
       end
 
+      it "APIキー未設定でも外部APIクライアントを初期化せずにDBから返却すること" do
+        expect(RiotApiClient).not_to receive(:new)
+
+        result = described_class.new.sync(game_name: game_name, tag_line: tag_line, force: false)
+        expect(result.id).to eq(recent_summoner.id)
+      end
+
       it "外部APIを呼び出さず、DBから即座にサモナーを返却すること" do
         expect(mock_client).not_to receive(:fetch_account_by_riot_id)
 
