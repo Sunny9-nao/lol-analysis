@@ -24,11 +24,15 @@ class BackendSchema < GraphQL::Schema
   end
 
   # Limit the depth and size of incoming queries:
-  max_depth(15)
-  max_query_string_tokens(5000)
+  max_depth 12
+  max_complexity 300
+  max_query_string_tokens 5000
+
+  # Disable GraphQL introspection in production unless explicitly enabled:
+  disable_introspection_entry_points if Rails.env.production? && ENV["ENABLE_INTROSPECTION"] != "true"
 
   # Stop validating when it encounters this many errors:
-  validate_max_errors(100)
+  validate_max_errors 100
 
   # Relay-style Object Identification:
 

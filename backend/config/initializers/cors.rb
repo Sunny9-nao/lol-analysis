@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Be sure to restart your server when you modify this file.
 
 # Avoid CORS issues when API is called from the frontend app.
@@ -7,10 +9,22 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"
+    origins do |source, _env|
+      allowed = if ENV["ALLOWED_ORIGINS"].present?
+                  ENV["ALLOWED_ORIGINS"].split(",").map(&:strip)
+      else
+                  [
+                    "http://localhost:3000",
+                    "http://localhost:5173",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:5173"
+                  ]
+      end
+      allowed.include?(source)
+    end
 
     resource "*",
       headers: :any,
-      methods: [ :get, :post, :put, :patch, :delete, :options, :head ]
+      methods: %i[get post options head]
   end
 end
