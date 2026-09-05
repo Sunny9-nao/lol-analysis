@@ -32,6 +32,10 @@ module Types
       field :kill_events, [ Types::Objects::TimelineKillEventType ], null: true, description: "Kill/death timeline events"
       field :item_timeline, [ Types::Objects::EarlyItemType ], null: true, description: "Full-game item purchase timeline"
 
+      def early_items
+        timeline_analysis[:early_items]
+      end
+
       def gold_timeline
         timeline_analysis[:gold_timeline]
       end
@@ -53,6 +57,11 @@ module Types
       field :game_mode, String, null: false
       def game_mode
         object.match.game_mode
+      end
+
+      field :game_duration, Integer, null: false, description: "Match duration in seconds"
+      def game_duration
+        object.match.game_duration
       end
 
       field :game_creation, GraphQL::Types::ISO8601DateTime, null: true
