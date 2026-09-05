@@ -40,8 +40,8 @@ class SummonerSyncService
     )
     summoner.save!
 
-    # 4. 直近の試合を取得して保存 (最新3件)
-    match_ids = client.fetch_match_ids_by_puuid(puuid, count: 3, region: region)
+    # 4. 直近のソロ/デュオランク試合を取得して保存 (最新40件)
+    match_ids = client.fetch_match_ids_by_puuid(puuid, count: 40, queue: 420, region: region)
     match_ids.each do |match_id|
       sync_match(match_id: match_id, summoner: summoner, region: region)
     end
@@ -59,18 +59,41 @@ class SummonerSyncService
   private
 
   def sync_match(match_id:, summoner:, region:)
-    detail = client.fetch_match_detail(match_id, region: region)
+    match = Match.find_by(match_id: match_id)
+    detail = match&.raw_info.presence
+
+    # 未保存の試合のみ外部APIから取得
+    if detail.blank?
+      sleep 0.06 # レートリミット対策 (最大秒間16リクエスト)
+      detail = client.fetch_match_detail(match_id, region: region)
+    end
+
     info = detail["info"]
     return unless info
 
     # 1. Match レコードを Upsert (10人分の生JSON raw_info を保存)
     game_creation_time = Time.at(info["gameCreation"] / 1000.0) rescue Time.current
-    match = Match.find_or_initialize_by(match_id: match_id)
+    match ||= Match.find_or_initialize_by(match_id: match_id)
+
+    # タイムラインの取得（未保存の場合のみ）
+    timeline = match.raw_timeline.presence
+    if timeline.blank?
+      sleep 0.06 # レートリミット対策
+      begin
+        timeline = client.fetch_match_timeline(match_id, region: region)
+      rescue RiotApiClient::RiotApiError => e
+        Rails.logger.warn("Failed to fetch timeline for #{match_id}: #{e.message}")
+        timeline = nil
+      end
+    end
+
     match.update!(
       game_mode: info["gameMode"],
+      queue_id: info["queueId"],
       game_duration: info["gameDuration"],
       game_creation: game_creation_time,
-      raw_info: detail
+      raw_info: detail,
+      raw_timeline: timeline
     )
 
     # 2. 該当プレイヤーと対面プレイヤーの特定
@@ -89,6 +112,14 @@ class SummonerSyncService
     items = (0..6).map { |i| my_p["item#{i}"] }.reject(&:zero?)
     spells = [my_p["summoner1Id"], my_p["summoner2Id"]].compact
 
+    # タイムライン解析（GD@14, CSD@14, 序盤アイテム購入ログ）
+    timeline_insights = TimelineAnalysisService.new(
+      timeline_data: timeline,
+      match_raw_info: detail,
+      puuid: summoner.puuid,
+      opponent_champion_name: opp_p&.dig("championName")
+    ).analyze
+
     # 3. MatchParticipant を Upsert (本人分156項目生JSON raw_participant を保存)
     participant = MatchParticipant.find_or_initialize_by(summoner: summoner, match: match)
     participant.update!(
@@ -104,7 +135,11 @@ class SummonerSyncService
       total_damage_dealt: my_p["totalDamageDealtToChampions"] || 0,
       items: items,
       spells: spells,
-      raw_participant: my_p
+      raw_participant: my_p,
+      gold_diff_at_14: timeline_insights[:gold_diff_at_14],
+      cs_diff_at_14: timeline_insights[:cs_diff_at_14],
+      lane_outcome: timeline_insights[:lane_outcome],
+      early_items: timeline_insights[:early_items]
     )
   end
 end

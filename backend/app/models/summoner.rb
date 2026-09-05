@@ -17,10 +17,11 @@ class Summoner < ApplicationRecord
   end
 
   def recent_win_rate
-    total = match_participants.count
+    ranked_parts = match_participants.joins(:match).where(matches: { queue_id: 420 })
+    total = ranked_parts.count
     return nil if total.zero?
 
-    wins = match_participants.where(win: true).count
+    wins = ranked_parts.where(win: true).count
     ((wins.to_f / total) * 100).round(1)
   end
 end

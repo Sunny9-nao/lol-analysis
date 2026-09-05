@@ -28,8 +28,8 @@ class RiotApiClient
     # 2. Summoner-V4: サモナーレベル・アイコンを取得
     summoner = fetch_summoner_by_puuid(puuid, platform: platform)
 
-    # 3. Match-V5: 直近の試合ID（最新3件）を取得
-    match_ids = fetch_match_ids_by_puuid(puuid, count: 3, region: region)
+    # 3. Match-V5: 直近の試合ID（最新15件）を取得
+    match_ids = fetch_match_ids_by_puuid(puuid, count: 15, region: region)
 
     # 4. 各試合の詳細を取得して自プレイヤーの戦績を抽出
     matches = match_ids.map do |match_id|
@@ -72,13 +72,19 @@ class RiotApiClient
     get_json(host_for(platform), path)
   end
 
-  def fetch_match_ids_by_puuid(puuid, count: 5, region: "asia")
+  def fetch_match_ids_by_puuid(puuid, count: 5, queue: nil, region: "asia")
     path = "/lol/match/v5/matches/by-puuid/#{puuid}/ids?start=0&count=#{count}"
+    path += "&queue=#{queue}" if queue.present?
     get_json(host_for(region), path)
   end
 
   def fetch_match_detail(match_id, region: "asia")
     path = "/lol/match/v5/matches/#{match_id}"
+    get_json(host_for(region), path)
+  end
+
+  def fetch_match_timeline(match_id, region: "asia")
+    path = "/lol/match/v5/matches/#{match_id}/timeline"
     get_json(host_for(region), path)
   end
 

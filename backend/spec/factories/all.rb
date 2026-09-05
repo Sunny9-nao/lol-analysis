@@ -14,6 +14,7 @@ FactoryBot.define do
   factory :match do
     sequence(:match_id) { |n| "JP1_#{n + 600000000}" }
     game_mode { "CLASSIC" }
+    queue_id { 420 }
     game_duration { 2468 }
     game_creation { Time.current }
   end

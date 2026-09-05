@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_061249) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_080000) do
   create_table "champions", force: :cascade do |t|
     t.string "champion_name"
     t.datetime "created_at", null: false
@@ -35,10 +35,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_061249) do
     t.string "champion_name", null: false
     t.datetime "created_at", null: false
     t.integer "cs", default: 0, null: false
+    t.integer "cs_diff_at_14"
     t.integer "deaths", default: 0, null: false
+    t.json "early_items"
+    t.integer "gold_diff_at_14"
     t.integer "gold_earned", default: 0, null: false
     t.json "items"
     t.integer "kills", default: 0, null: false
+    t.string "lane_outcome"
     t.integer "match_id", null: false
     t.string "opponent_champion_name"
     t.string "position"
@@ -49,6 +53,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_061249) do
     t.datetime "updated_at", null: false
     t.boolean "win", null: false
     t.index ["champion_name"], name: "index_match_participants_on_champion_name"
+    t.index ["lane_outcome"], name: "index_match_participants_on_lane_outcome"
     t.index ["match_id"], name: "index_match_participants_on_match_id"
     t.index ["opponent_champion_name"], name: "index_match_participants_on_opponent_champion_name"
     t.index ["summoner_id", "match_id"], name: "index_match_participants_on_summoner_id_and_match_id", unique: true
@@ -62,9 +67,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_061249) do
     t.integer "game_duration", null: false
     t.string "game_mode", null: false
     t.string "match_id", null: false
+    t.integer "queue_id"
     t.json "raw_info"
+    t.json "raw_timeline"
     t.datetime "updated_at", null: false
     t.index ["match_id"], name: "index_matches_on_match_id", unique: true
+    t.index ["queue_id"], name: "index_matches_on_queue_id"
   end
 
   create_table "summoners", force: :cascade do |t|
