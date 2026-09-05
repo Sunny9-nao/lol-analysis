@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoL SoloQ Lab - Matchup & Performance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .item-slot { width: 26px; height: 26px; border-radius: 4px; background-color: #202124; overflow: hidden; border: 1px solid #3c4043; }
+    .item-slot-empty { width: 26px; height: 26px; border-radius: 4px; background-color: #f1f3f4; border: 1px solid #dadce0; }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] text-[#202124] min-h-screen antialiased flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-[#dadce0] sticky top-0 z-30 shadow-2xs">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-[#1a73e8] text-white flex items-center justify-center font-bold text-xs tracking-wider">
+          SOLO
+        </div>
+        <div>
+          <span class="font-bold text-base tracking-tight text-[#202124] block">
+            SoloQ Matchup Lab
+          </span>
+          <span class="text-[10px] text-[#5f6368] font-medium block -mt-0.5">
+            Ranked Solo/Duo 専用分析
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="bg-[#f1f3f4] border border-[#dadce0] rounded-full px-3.5 py-1 text-xs text-[#202124] font-semibold flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#137333]"></span>
+          <span>Sunny9#hono</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-6 py-6 flex-1 w-full space-y-6">
+
+    <!-- 層1: サモナー情報 & LPサマリ -->
+    <div class="bg-white rounded-xl border border-[#dadce0] p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="flex items-center gap-5">
+        <div class="relative w-14 h-14 shrink-0">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/538.png" alt="Icon" class="w-14 h-14 rounded-xl border border-[#dadce0] object-cover">
+          <span class="absolute -bottom-1.5 -right-1.5 bg-[#202124] text-white text-[9px] font-bold px-1.5 py-0.2 rounded border border-white">
+            Lv.487
+          </span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold text-[#202124] tracking-tight">Sunny9</h1>
+            <span class="text-xs font-medium text-[#5f6368] bg-[#f1f3f4] px-2 py-0.5 rounded">#hono</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="text-xs font-bold text-[#1967d2] bg-[#e8f0fe] px-2.5 py-0.5 rounded border border-[#d2e3fc]">
+              Emerald IV (45 LP)
+            </span>
+            <span class="text-xs text-[#137333] font-semibold">+21 LP (前戦)</span>
+            <span class="text-xs text-[#80868b]">•</span>
+            <span class="text-xs text-[#5f6368]">最終同期: 本日 15:45</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="flex items-center gap-3">
+        <div class="bg-[#f8f9fa] border border-[#e8eaed] rounded-lg px-4 py-2.5 text-center min-w-[90px]">
+          <span class="text-[11px] font-medium text-[#5f6368] block">記録試合数</span>
+          <span class="text-base font-bold text-[#202124]">37 試合</span>
+        </div>
+        <div class="bg-[#e8f0fe] border border-[#d2e3fc] rounded-lg px-4 py-2.5 text-center min-w-[100px]">
+          <span class="text-[11px] font-medium text-[#1967d2] block">ソロランク勝率</span>
+          <span class="text-base font-bold text-[#1967d2]">58.3%</span>
+        </div>
+        <div class="bg-[#f8f9fa] border border-[#e8eaed] rounded-lg px-4 py-2.5 text-center min-w-[90px]">
+          <span class="text-[11px] font-medium text-[#5f6368] block">反省メモ数</span>
+          <span class="text-base font-bold text-[#202124]" id="globalNoteCount">14 件</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 層2: 直前のソロランク試合サジェストバナー (UC-A3) -->
+    <div id="recentBanner" class="bg-white rounded-xl border border-[#d2e3fc] p-4 shadow-xs transition">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-1.5 h-12 rounded-full bg-[#d93025] shrink-0"></div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[11px] font-bold text-[#5f6368] uppercase tracking-wider">
+                直前のソロランク試合 (15分前に終了)
+              </span>
+              <span class="text-[11px] font-bold px-2 py-0.2 rounded bg-[#fce8e6] text-[#c5221f]">
+                敗北
+              </span>
+              <span class="text-xs text-[#5f6368]">28分15秒</span>
+            </div>
+            <!-- チャンプ・対面・KDA・CS・最終ビルドスロット -->
+            <div class="flex flex-wrap items-center gap-3 text-xs">
+              <div class="flex items-center gap-1.5">
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Renekton.png" alt="Renekton" class="w-7 h-7 rounded object-cover border border-[#dadce0]">
+                <span class="font-bold text-[#202124]">Renekton</span>
+                <span class="text-[#80868b] font-medium">vs</span>
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png" alt="Jax" class="w-7 h-7 rounded object-cover border border-[#dadce0]">
+                <span class="font-bold text-[#202124]">Jax</span>
+              </div>
+              <span class="text-[#80868b]">•</span>
+              <span class="text-[#5f6368]">KDA: <strong class="text-[#202124]">2/6/3</strong></span>
+              <span class="text-[#5f6368]">CS: <strong class="text-[#202124]">182</strong> (6.5/m)</span>
+              <span class="text-[#80868b]">•</span>
+              <!-- 最終ビルドプレビュー -->
+              <div class="flex items-center gap-1">
+                <span class="text-[11px] text-[#5f6368] mr-1">最終ビルド:</span>
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3153.png" class="item-slot" title="王剣">
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3047.png" class="item-slot" title="スチールキャップ">
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3071.png" class="item-slot" title="黒斧">
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/1054.png" class="item-slot" title="ドランシールド">
+                <div class="item-slot-empty"></div>
+                <div class="item-slot-empty"></div>
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3340.png" class="item-slot rounded-full ml-1" title="トリンケット">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-[#b06000] font-medium bg-[#fef7e0] border border-[#fce8b2] px-2.5 py-1 rounded">
+            反省メモ未記入
+          </span>
+          <button onclick="openNoteModal('Renekton', 'Jax', false)" class="text-xs font-bold text-white bg-[#1a73e8] hover:bg-[#1557b0] px-4 py-2 rounded-lg shadow-2xs transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            反省メモを記録
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 層3: メインナビゲーションタブ (3タブ構成) -->
+    <div class="flex border-b border-[#dadce0] gap-8">
+      <button onclick="switchTab('matchups')" id="tabBtn-matchups" class="pb-3 text-xs font-bold border-b-2 border-[#1a73e8] text-[#1a73e8] flex items-center gap-2 transition cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <span>対面分析・対策 (Matchup Lab)</span>
+      </button>
+      <button onclick="switchTab('gap')" id="tabBtn-gap" class="pb-3 text-xs font-semibold border-b-2 border-transparent text-[#5f6368] hover:text-[#202124] flex items-center gap-2 transition cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>弱点・ギャップ分析 (Performance & Gap)</span>
+      </button>
+      <button onclick="switchTab('history')" id="tabBtn-history" class="pb-3 text-xs font-semibold border-b-2 border-transparent text-[#5f6368] hover:text-[#202124] flex items-center gap-2 transition cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>試合履歴 (Match History)</span>
+      </button>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- タブ1: 対面分析・対策 (Matchup Lab) -->
+    <!-- ================================================================= -->
+    <div id="tabContent-matchups" class="space-y-6">
+
+      <!-- 自チャンプセレクタ ＆ 相手逆引き検索バー -->
+      <div class="bg-white rounded-xl border border-[#dadce0] p-4 shadow-xs space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- 自チャンプセレクタ -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1">
+            <span class="text-xs font-semibold text-[#5f6368] shrink-0 mr-1">使用チャンピオン:</span>
+            <button class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#1a73e8] text-white shadow-2xs flex items-center gap-2 shrink-0">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Renekton.png" class="w-4 h-4 rounded object-cover">
+              Renekton (18試合 / 61.1%)
+            </button>
+            <button class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-[#f8f9fa] hover:bg-[#e8eaed] text-[#3c4043] border border-[#dadce0] flex items-center gap-2 shrink-0 transition">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png" class="w-4 h-4 rounded object-cover">
+              Jax (14試合 / 50.0%)
+            </button>
+          </div>
+
+          <!-- UC-A1: 相手チャンプ逆引き検索バー -->
+          <div class="relative w-full md:w-80">
+            <input type="text" id="reverseSearchInput" oninput="handleReverseSearch()" placeholder="相手チャンピオン名で逆引き... (例: Aatrox)" class="w-full pl-8 pr-4 py-2 bg-[#f8f9fa] border border-[#dadce0] focus:border-[#1a73e8] focus:bg-white rounded-lg text-xs text-[#202124] outline-none transition placeholder-[#80868b]">
+            <div class="absolute left-2.5 top-2.5 text-[#5f6368]">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 逆引きレコメンド結果カード -->
+        <div id="reverseSearchResult" class="hidden bg-[#e8f0fe] border border-[#d2e3fc] rounded-lg p-4 animate-in fade-in duration-150">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-[#1967d2]">
+              対「<span id="reverseOppName">Aatrox</span>」におけるあなたの戦績比較 (推奨カウンター):
+            </span>
+            <span class="text-[11px] text-[#5f6368]">個人実績データ準拠</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-white p-3 rounded border border-[#b7e1cd] shadow-2xs flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-[11px] font-bold text-[#137333] bg-[#e6f4ea] px-2 py-0.5 rounded">推奨 1</span>
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Renekton.png" class="w-7 h-7 rounded object-cover">
+                <div>
+                  <span class="font-bold text-xs text-[#202124] block">Renekton</span>
+                  <span class="text-[11px] text-[#5f6368]">4勝0敗 (勝率 100% / KDA 3.8)</span>
+                </div>
+              </div>
+              <button onclick="openCheatSheet('Renekton', 'Aatrox')" class="text-xs font-bold text-[#1a73e8] bg-[#e8f0fe] hover:bg-[#d2e3fc] px-2.5 py-1 rounded">
+                対策カンペ
+              </button>
+            </div>
+            <div class="bg-white p-3 rounded border border-[#dadce0] shadow-2xs flex items-center justify-between opacity-80">
+              <div class="flex items-center gap-2.5">
+                <span class="text-[11px] font-bold text-[#5f6368] bg-[#f1f3f4] px-2 py-0.5 rounded">選択肢 2</span>
+                <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png" class="w-7 h-7 rounded object-cover">
+                <div>
+                  <span class="font-bold text-xs text-[#202124] block">Jax</span>
+                  <span class="text-[11px] text-[#5f6368]">1勝1敗 (勝率 50% / KDA 2.1)</span>
+                </div>
+              </div>
+              <button onclick="openCheatSheet('Jax', 'Aatrox')" class="text-xs font-medium text-[#5f6368] hover:text-[#202124] px-2.5 py-1">
+                カンペ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Insights (天敵ワースト ＆ 得意相性) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 天敵ワースト -->
+        <div class="bg-white border border-[#fad2cf] rounded-xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+          <div class="flex items-center gap-3">
+            <div class="w-2.5 h-10 rounded-full bg-[#d93025] shrink-0"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-[#c5221f] uppercase tracking-wider">要警戒・不利対面</span>
+                <span class="text-sm font-bold text-[#202124]">vs Garen</span>
+              </div>
+              <p class="text-xs text-[#5f6368] line-clamp-1 mt-0.5">
+                教訓: 「沈黙中は殴り合わない。E回転終了後にWスタンを入れてトレード」
+              </p>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-sm font-bold text-[#d93025] block">勝率 25.0%</span>
+            <span class="text-[10px] text-[#5f6368]">1勝3敗 (Hard)</span>
+          </div>
+        </div>
+
+        <!-- 得意相性 -->
+        <div class="bg-white border border-[#b7e1cd] rounded-xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+          <div class="flex items-center gap-3">
+            <div class="w-2.5 h-10 rounded-full bg-[#137333] shrink-0"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-[#137333] uppercase tracking-wider">得意対面</span>
+                <span class="text-sm font-bold text-[#202124]">vs Aatrox</span>
+              </div>
+              <p class="text-xs text-[#5f6368] line-clamp-1 mt-0.5">
+                教訓: 「Q3をEで潜り込んで交わす。怒りWから一気に削り切る」
+              </p>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-sm font-bold text-[#137333] block">勝率 100%</span>
+            <span class="text-[10px] text-[#5f6368]">4勝0敗 (Easy)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 対面チャンピオン一覧 (ソート・検索・カンペ・アコーディオン) -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between text-xs text-[#5f6368] px-1 font-medium">
+          <span>Renekton の対面チャンピオン一覧 (クリックで過去ログ・最終ビルド・購入順を展開)</span>
+          <span>全 8 対面</span>
+        </div>
+
+        <!-- Card 1: vs Garen (天敵) -->
+        <div class="bg-white rounded-xl border border-[#dadce0] overflow-hidden shadow-2xs hover:border-[#1a73e8]/50 transition">
+          <div class="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none" onclick="toggleAccordion('garen')">
+            <div class="flex items-center gap-3.5 min-w-[200px]">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Garen.png" class="w-11 h-11 rounded-lg object-cover border border-[#e8eaed]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-sm text-[#202124]">Garen</h3>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#fef7e0] border border-[#fce8b2] text-[#b06000]">Hard</span>
+                </div>
+                <span class="text-[11px] text-[#5f6368]">4 試合記録</span>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-6 text-center text-xs flex-1 max-w-sm">
+              <div>
+                <span class="text-[11px] text-[#5f6368] block">対面勝率</span>
+                <span class="font-bold text-sm text-[#d93025]">25.0%</span>
+                <span class="text-[10px] text-[#5f6368] block">(1勝 3敗)</span>
+              </div>
+              <div>
+                <span class="text-[11px] text-[#5f6368] block">平均 KDA</span>
+                <span class="font-bold text-sm text-[#202124]">1.52</span>
+              </div>
+              <div>
+                <span class="text-[11px] text-[#5f6368] block">平均 CS/分</span>
+                <span class="font-bold text-sm text-[#202124]">6.8/m</span>
+              </div>
+            </div>
+
+            <!-- Latest Note -->
+            <div class="hidden lg:block max-w-xs text-xs bg-[#f8f9fa] border border-[#e8eaed] rounded-lg p-2.5 text-[#3c4043] flex-1">
+              <span class="text-[10px] font-bold text-[#5f6368] block mb-0.5">最新反省メモ:</span>
+              <p class="line-clamp-2 text-[11px]">「沈黙中は殴り合わない。忍び足袋（スチールキャップ）を最優先で直行すること」</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2 pl-2">
+              <button onclick="event.stopPropagation(); openCheatSheet('Renekton', 'Garen')" class="text-xs font-semibold text-[#1a73e8] bg-[#e8f0fe] hover:bg-[#d2e3fc] px-3 py-1.5 rounded-lg border border-[#d2e3fc] transition flex items-center gap-1 shrink-0 cursor-pointer">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                対策カンペ
+              </button>
+              <span id="arrow-garen" class="text-[#5f6368] text-xs p-1">▼</span>
+            </div>
+          </div>
+
+          <!-- Accordion Detail (最終ビルド ＆ 序盤購入順 ＆ メモ) -->
+          <div id="detail-garen" class="hidden border-t border-[#dadce0] bg-[#f8f9fa] p-5 space-y-4">
+            <h4 class="text-xs font-bold text-[#202124] uppercase tracking-wider flex items-center gap-2">
+              <span>vs Garen 過去の対戦履歴 (全 4 試合)</span>
+            </h4>
+
+            <!-- 試合1: 勝利した試合 -->
+            <div class="bg-white border border-[#dadce0] rounded-lg p-4 space-y-3 shadow-2xs">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs border-b border-[#f1f3f4] pb-2.5">
+                <div class="flex items-center gap-2.5">
+                  <span class="font-bold text-[#1967d2] bg-[#e8f0fe] px-2 py-0.5 rounded">勝利</span>
+                  <span class="font-bold text-[#202124]">KDA: 5/2/6</span>
+                  <span class="text-[#5f6368]">CS: 195 (7.5/m)</span>
+                  <span class="text-[#80868b]">•</span>
+                  <span class="text-[#5f6368]">与ダメ: <strong>19.8k</strong> (チーム内 24%)</span>
+                  <span class="text-[#80868b]">•</span>
+                  <span class="text-[#80868b]">2026/09/04 (昨日 21:15)</span>
+                </div>
+                <div>
+                  <span class="text-xs font-bold text-[#137333] bg-[#e6f4ea] px-2 py-0.5 rounded">Even</span>
+                </div>
+              </div>
+
+              <!-- ① 最終ビルド ＆ サモスペ・ルーン (王道LoL分析の要件) -->
+              <div class="flex flex-wrap items-center justify-between gap-3 bg-[#f8f9fa] p-3 rounded border border-[#e8eaed]">
+                <div class="flex items-center gap-4">
+                  <!-- サモスペ ＆ ルーン -->
+                  <div class="flex items-center gap-1.5 border-r border-[#dadce0] pr-3">
+                    <div class="flex flex-col gap-1">
+                      <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/SummonerFlash.png" class="w-4 h-4 rounded" title="フラッシュ">
+                      <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/SummonerTeleport.png" class="w-4 h-4 rounded" title="テレポート">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Precision/Conqueror/Conqueror.png" class="w-4 h-4 rounded-full bg-black p-0.5" title="征服者">
+                      <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/7204_Resolve.png" class="w-4 h-4 rounded-full bg-black p-0.5" title="不滅">
+                    </div>
+                  </div>
+
+                  <!-- 最終ビルド 6スロット ＋ トリンケット -->
+                  <div class="flex items-center gap-1">
+                    <span class="text-[11px] font-semibold text-[#5f6368] mr-1">最終ビルド:</span>
+                    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3153.png" class="item-slot" title="王剣">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3047.png" class="item-slot" title="プレートスチールキャップ">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3161.png" class="item-slot" title="ショウジンの矛">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3053.png" class="item-slot" title="ステラックの篭手">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3071.png" class="item-slot" title="黒斧">
+                    <div class="item-slot-empty"></div>
+                    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3340.png" class="item-slot rounded-full ml-1" title="トリンケット">
+                  </div>
+                </div>
+
+                <div class="text-right text-[11px] text-[#5f6368]">
+                  ゴールド: <strong class="text-[#202124]">13,420 G</strong>
+                </div>
+              </div>
+
+              <!-- ② 序盤の購入順タイムライン (付加価値インサイト) -->
+              <div class="bg-white p-2.5 rounded border border-[#e8eaed] flex items-center gap-3 text-xs overflow-x-auto">
+                <span class="font-semibold text-[#1a73e8] text-[11px] shrink-0">序盤の購入順 (14分まで):</span>
+                <div class="flex items-center gap-1 shrink-0">
+                  <span class="text-[10px] text-[#80868b]">00:00</span>
+                  <span class="px-2 py-0.5 bg-[#f8f9fa] border rounded text-[11px]">ドランシールド＋ポーション</span>
+                </div>
+                <span class="text-[#80868b]">→</span>
+                <div class="flex items-center gap-1 shrink-0">
+                  <span class="text-[10px] text-[#80868b]">04:20</span>
+                  <span class="px-2 py-0.5 bg-[#f8f9fa] border border-[#1a73e8] rounded text-[11px] font-semibold text-[#1a73e8]">ブーツ＋布の鎧</span>
+                </div>
+                <span class="text-[#80868b]">→</span>
+                <div class="flex items-center gap-1 shrink-0">
+                  <span class="text-[10px] text-[#80868b]">07:50</span>
+                  <span class="px-2 py-0.5 bg-[#e8f0fe] border border-[#1a73e8] rounded text-[11px] font-bold text-[#1967d2]">プレートスチールキャップ完成 ＋ ツルハシ</span>
+                </div>
+              </div>
+
+              <!-- ③ 反省メモ -->
+              <div class="text-xs text-[#3c4043] bg-[#fff8e1] border border-[#ffe082] p-2.5 rounded">
+                <span class="font-bold text-[11px] text-[#b06000] block mb-0.5">反省メモ:</span>
+                「初手ドラン盾にして耐え、4分で靴とアーマーを買ってMS差をつけたのが大正解だった。E回転を回避しやすくなった。」
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: vs Aatrox (得意) -->
+        <div class="bg-white rounded-xl border border-[#dadce0] overflow-hidden shadow-2xs hover:border-[#1a73e8]/50 transition">
+          <div class="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none">
+            <div class="flex items-center gap-3.5 min-w-[200px]">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Aatrox.png" class="w-11 h-11 rounded-lg object-cover border border-[#e8eaed]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-sm text-[#202124]">Aatrox</h3>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#e6f4ea] border border-[#b7e1cd] text-[#137333]">Easy</span>
+                </div>
+                <span class="text-[11px] text-[#5f6368]">4 試合記録</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6 text-center text-xs flex-1 max-w-sm">
+              <div>
+                <span class="text-[11px] text-[#5f6368] block">対面勝率</span>
+                <span class="font-bold text-sm text-[#137333]">100%</span>
+                <span class="text-[10px] text-[#5f6368] block">(4勝 0敗)</span>
+              </div>
+              <div>
+                <span class="text-[11px] text-[#5f6368] block">平均 KDA</span>
+                <span class="font-bold text-sm text-[#202124]">3.85</span>
+              </div>
+              <div>
+                <span class="text-[11px] text-[#5f6368] block">平均 CS/分</span>
+                <span class="font-bold text-sm text-[#202124]">8.2/m</span>
+              </div>
+            </div>
+
+            <div class="hidden lg:block max-w-xs text-xs bg-[#f8f9fa] border border-[#e8eaed] rounded-lg p-2.5 text-[#3c4043] flex-1">
+              <span class="text-[10px] font-bold text-[#5f6368] block mb-0.5">最新反省メモ:</span>
+              <p class="line-clamp-2 text-[11px]">「Q3をEで潜り込んで交わす。怒りWから一気に削れば完封できる」</p>
+            </div>
+
+            <div class="flex items-center gap-2 pl-2">
+              <button onclick="openCheatSheet('Renekton', 'Aatrox')" class="text-xs font-semibold text-[#1a73e8] bg-[#e8f0fe] hover:bg-[#d2e3fc] px-3 py-1.5 rounded-lg border border-[#d2e3fc] transition flex items-center gap-1 shrink-0 cursor-pointer">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                対策カンペ
+              </button>
+              <span class="text-[#5f6368] text-xs p-1">▼</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- タブ2: 弱点・ギャップ分析 (Performance & Gap) -->
+    <!-- ================================================================= -->
+    <div id="tabContent-gap" class="hidden space-y-6">
+
+      <div class="bg-white border border-[#dadce0] rounded-xl p-5 shadow-2xs">
+        <h3 class="font-bold text-sm text-[#202124] flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#1a73e8]"></span>
+          レーン戦結果（14分時点）と最終試合結果のギャップ分析
+        </h3>
+        <p class="text-xs text-[#5f6368] mt-1">
+          14分時点（プレート消滅）の対面ゴールド差およびキル差からレーン勝敗を客観判定。「レーン戦の課題」と「中盤以降のマクロの課題」を明確に切り分けます。
+        </p>
+      </div>
+
+      <!-- 4象限マトリクスカード -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 象限1 -->
+        <div class="bg-white border border-[#b7e1cd] rounded-xl p-4.5 shadow-2xs">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-[#137333]">
+              レーン勝利 → 試合勝利 (順当スノーボール)
+            </span>
+            <span class="text-base font-bold text-[#137333]">16 試合 (43%)</span>
+          </div>
+          <p class="text-xs text-[#5f6368]">
+            レーンで対面を圧倒し、そのままゲームを支配できた試合。確立された勝ちパターンです。
+          </p>
+        </div>
+
+        <!-- 象限2 (最重要) -->
+        <div class="bg-white border border-[#fad2cf] rounded-xl p-4.5 shadow-xs ring-1 ring-[#d93025]/30">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-[#c5221f] flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-[#d93025]"></span>
+              レーン勝利 → 試合敗北 (要改善: 逆転負け / マクロ差)
+            </span>
+            <span class="text-base font-bold text-[#c5221f]">8 試合 (22%)</span>
+          </div>
+          <p class="text-xs text-[#3c4043] font-medium">
+            対面には勝っていたものの、中盤・集団戦・オブジェクト判断で逆転された試合。LP向上のための最大の改善領域です。
+          </p>
+          <div class="mt-3 pt-2 border-t border-[#f1f3f4] flex items-center justify-between">
+            <span class="text-[11px] text-[#5f6368]">主な敗因: 集団戦寄り遅れ、キャッチ被弾</span>
+            <button class="text-xs font-semibold text-[#1a73e8] hover:underline cursor-pointer">該当8試合を抽出 →</button>
+          </div>
+        </div>
+
+        <!-- 象限3 -->
+        <div class="bg-white border border-[#dadce0] rounded-xl p-4.5 shadow-2xs">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-[#5f6368]">
+              レーン敗北 → 試合勝利 (捲り / 味方連携)
+            </span>
+            <span class="text-base font-bold text-[#202124]">6 試合 (16%)</span>
+          </div>
+          <p class="text-xs text-[#5f6368]">
+            レーン戦は不利だったものの、耐えて集団戦やオブジェクト連動で勝利した試合。
+          </p>
+        </div>
+
+        <!-- 象限4 -->
+        <div class="bg-white border border-[#fad2cf] rounded-xl p-4.5 shadow-2xs">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-[#c5221f]">
+              レーン敗北 → 試合敗北 (レーン崩壊)
+            </span>
+            <span class="text-base font-bold text-[#c5221f]">7 試合 (19%)</span>
+          </div>
+          <p class="text-xs text-[#5f6368]">
+            序盤のレーン戦でソロキル・ガンク被弾しそのまま押し切られた試合。対面対策カンペを重点的に見直しましょう。
+          </p>
+        </div>
+      </div>
+
+      <!-- 敗因ランキング -->
+      <div class="bg-white rounded-xl border border-[#dadce0] p-6 shadow-xs space-y-4">
+        <h3 class="font-bold text-sm text-[#202124] flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#1a73e8]"></span>
+          直近の敗因ワーストランキング (振り返りメモの要因タグ自動集計)
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs font-semibold mb-1">
+              <span class="text-[#c5221f]">1位: ガンク被弾 (ワーディング・リコール判断ミス)</span>
+              <span class="text-[#5f6368]">7 回 (35%)</span>
+            </div>
+            <div class="w-full bg-[#f1f3f4] rounded-full h-2 overflow-hidden">
+              <div class="bg-[#d93025] h-2 rounded-full" style="width: 35%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs font-semibold mb-1">
+              <span class="text-[#b06000]">2位: スキルCDトレード負け (相手スキル未使用時の甘え)</span>
+              <span class="text-[#5f6368]">5 回 (25%)</span>
+            </div>
+            <div class="w-full bg-[#f1f3f4] rounded-full h-2 overflow-hidden">
+              <div class="bg-[#fbbc04] h-2 rounded-full" style="width: 25%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs font-semibold mb-1">
+              <span class="text-[#5f6368]">3位: Lv1-3ソロキル被弾 (無理なウェーブプッシュ)</span>
+              <span class="text-[#5f6368]">3 回 (15%)</span>
+            </div>
+            <div class="w-full bg-[#f1f3f4] rounded-full h-2 overflow-hidden">
+              <div class="bg-[#5f6368] h-2 rounded-full" style="width: 15%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- タブ3: 試合履歴 (Match History) [最終ビルド・スペル・ルーン完全装備] -->
+    <!-- ================================================================= -->
+    <div id="tabContent-history" class="hidden space-y-3">
+      <div class="flex items-center justify-between text-xs text-[#5f6368] px-1 font-medium">
+        <span>直近のソロランク試合履歴 (最新順)</span>
+        <span>全 37 試合</span>
+      </div>
+
+      <!-- Match Row 1 (敗北) -->
+      <div class="bg-white rounded-xl border border-[#dadce0] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs hover:border-[#1a73e8]/40 transition">
+        <!-- 1. 勝敗 ＆ 日時 -->
+        <div class="flex items-center gap-4 min-w-[150px]">
+          <div class="w-1.5 h-12 rounded-full bg-[#d93025] shrink-0"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-[#c5221f]">敗北</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#f1f3f4] text-[#3c4043]">Solo/Duo</span>
+            </div>
+            <div class="text-[11px] text-[#5f6368] mt-0.5">
+              <span class="font-semibold text-[#202124]">15分前</span> (本日 15:30)
+            </div>
+            <div class="text-[11px] text-[#80868b]">試合時間: 28分15秒</div>
+          </div>
+        </div>
+
+        <!-- 2. チャンプ ＆ スペル ＆ ルーン ＆ 対面 -->
+        <div class="flex items-center gap-3 min-w-[220px]">
+          <div class="flex items-center gap-1.5">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Renekton.png" class="w-11 h-11 rounded-lg object-cover border border-[#dadce0]">
+            <div class="flex flex-col gap-0.5">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/SummonerFlash.png" class="w-4 h-4 rounded" title="フラッシュ">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/SummonerTeleport.png" class="w-4 h-4 rounded" title="テレポート">
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Precision/Conqueror/Conqueror.png" class="w-4 h-4 rounded-full bg-black p-0.5" title="征服者">
+              <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/7204_Resolve.png" class="w-4 h-4 rounded-full bg-black p-0.5" title="不滅">
+            </div>
+          </div>
+          <div>
+            <span class="font-bold text-xs text-[#202124] block">Renekton</span>
+            <span class="text-[10px] text-[#5f6368]">TOP • Lv.14</span>
+          </div>
+
+          <span class="text-xs text-[#80868b] font-medium mx-1">vs</span>
+
+          <div class="flex items-center gap-1.5">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png" class="w-9 h-9 rounded object-cover border border-[#dadce0]">
+            <div>
+              <span class="font-bold text-xs text-[#202124] block">Jax</span>
+              <span class="text-[10px] text-[#5f6368]">対面</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. KDA ＆ CS ＆ ダメージ -->
+        <div class="text-center text-xs min-w-[130px]">
+          <span class="font-bold text-sm text-[#202124]">2 / 6 / 3</span>
+          <span class="text-[11px] text-[#c5221f] block font-semibold">0.83 KDA</span>
+          <span class="text-[11px] text-[#5f6368]">182 CS (6.5/m) • 12.8k G</span>
+        </div>
+
+        <!-- 4. 最終ビルド (6スロット ＋ トリンケット) -->
+        <div class="flex items-center gap-1">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3153.png" class="item-slot" title="王剣">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3047.png" class="item-slot" title="プレートスチールキャップ">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3071.png" class="item-slot" title="黒斧">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/1054.png" class="item-slot" title="ドランシールド">
+          <div class="item-slot-empty"></div>
+          <div class="item-slot-empty"></div>
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3340.png" class="item-slot rounded-full ml-1" title="トリンケット">
+        </div>
+
+        <!-- 5. 反省メモプレビュー -->
+        <div class="flex-1 max-w-xs text-xs bg-[#f8f9fa] border border-[#e8eaed] rounded-lg p-2.5 text-[#3c4043] flex items-center justify-between">
+          <span class="text-xs text-[#80868b] italic">（反省メモ未記入）</span>
+          <button onclick="openNoteModal('Renekton', 'Jax', false)" class="text-xs font-semibold text-[#1a73e8] hover:underline cursor-pointer">
+            + メモ作成
+          </button>
+        </div>
+      </div>
+
+      <!-- Match Row 2 (勝利) -->
+      <div class="bg-white rounded-xl border border-[#dadce0] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs hover:border-[#1a73e8]/40 transition">
+        <!-- 1. 勝敗 ＆ 日時 -->
+        <div class="flex items-center gap-4 min-w-[150px]">
+          <div class="w-1.5 h-12 rounded-full bg-[#1a73e8] shrink-0"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-[#1967d2]">勝利</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#f1f3f4] text-[#3c4043]">Solo/Duo</span>
+            </div>
+            <div class="text-[11px] text-[#5f6368] mt-0.5">
+              <span class="font-semibold text-[#202124]">昨日</span> (9/4 21:15)
+            </div>
+            <div class="text-[11px] text-[#80868b]">試合時間: 31分04秒</div>
+          </div>
+        </div>
+
+        <!-- 2. チャンプ ＆ スペル ＆ ルーン ＆ 対面 -->
+        <div class="flex items-center gap-3 min-w-[220px]">
+          <div class="flex items-center gap-1.5">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Renekton.png" class="w-11 h-11 rounded-lg object-cover border border-[#dadce0]">
+            <div class="flex flex-col gap-0.5">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/SummonerFlash.png" class="w-4 h-4 rounded" title="フラッシュ">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/SummonerTeleport.png" class="w-4 h-4 rounded" title="テレポート">
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Precision/Conqueror/Conqueror.png" class="w-4 h-4 rounded-full bg-black p-0.5" title="征服者">
+              <img src="https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/7204_Resolve.png" class="w-4 h-4 rounded-full bg-black p-0.5" title="不滅">
+            </div>
+          </div>
+          <div>
+            <span class="font-bold text-xs text-[#202124] block">Renekton</span>
+            <span class="text-[10px] text-[#5f6368]">TOP • Lv.16</span>
+          </div>
+
+          <span class="text-xs text-[#80868b] font-medium mx-1">vs</span>
+
+          <div class="flex items-center gap-1.5">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Garen.png" class="w-9 h-9 rounded object-cover border border-[#dadce0]">
+            <div>
+              <span class="font-bold text-xs text-[#202124] block">Garen</span>
+              <span class="text-[10px] text-[#5f6368]">対面</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. KDA ＆ CS ＆ ダメージ -->
+        <div class="text-center text-xs min-w-[130px]">
+          <span class="font-bold text-sm text-[#202124]">5 / 2 / 6</span>
+          <span class="text-[11px] text-[#1967d2] block font-semibold">5.50 KDA</span>
+          <span class="text-[11px] text-[#5f6368]">195 CS (6.3/m) • 19.8k Dmg</span>
+        </div>
+
+        <!-- 4. 最終ビルド (5コア完成 ＋ トリンケット) -->
+        <div class="flex items-center gap-1">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3153.png" class="item-slot" title="王剣">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3047.png" class="item-slot" title="プレートスチールキャップ">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3161.png" class="item-slot" title="ショウジンの矛">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3053.png" class="item-slot" title="ステラックの篭手">
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3071.png" class="item-slot" title="黒斧">
+          <div class="item-slot-empty"></div>
+          <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3340.png" class="item-slot rounded-full ml-1" title="トリンケット">
+        </div>
+
+        <!-- 5. 反省メモプレビュー -->
+        <div class="flex-1 max-w-xs text-xs bg-[#f8f9fa] border border-[#e8eaed] rounded-lg p-2.5 text-[#3c4043] flex items-center justify-between">
+          <p class="truncate text-xs">「初手ドラン盾＋靴直行が大正解...」</p>
+          <button onclick="openNoteModal('Renekton', 'Garen', true)" class="text-xs font-semibold text-[#1a73e8] hover:underline cursor-pointer ml-2">
+            編集
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================================================================= -->
+  <!-- モーダル1: 試合前カンペ (チートシート) モーダル (UC-A2) -->
+  <!-- ================================================================= -->
+  <div id="cheatSheetModal" class="hidden fixed inset-0 z-50 bg-[#202124]/40 flex items-center justify-center p-4 backdrop-blur-2xs">
+    <div class="bg-white rounded-xl border border-[#dadce0] max-w-2xl w-full p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-[#dadce0] pb-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#5f6368]">試合前対策カンペ (ロード中即読)</span>
+          <h2 class="text-lg font-bold text-[#202124] mt-0.5">
+            <span id="csMyChamp">Renekton</span> <span class="text-sm font-normal text-[#80868b]">vs</span> <span id="csOppChamp" class="text-[#1967d2]">Garen</span>
+          </h2>
+        </div>
+        <button onclick="closeCheatSheet()" class="text-[#5f6368] hover:text-[#202124] text-lg font-bold p-1 cursor-pointer">&times;</button>
+      </div>
+
+      <!-- 最重要！教訓メモ (箇条書き・大文字) -->
+      <div class="space-y-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-[#c5221f]">
+          対<span id="csTargetChamp">Garen</span>戦の絶対遵守ルール (過去実績より)
+        </h3>
+        <div class="bg-[#fef7e0] border border-[#fce8b2] rounded-lg p-4 space-y-2.5 text-xs text-[#202124] leading-relaxed">
+          <div class="flex items-start gap-2">
+            <span class="text-[#b06000] font-bold shrink-0">1.</span>
+            <span><strong>沈黙（Q）を受けた直後は絶対に無駄に殴り返さない</strong>。相手のE回転が終わるまで距離を取り、回転後に怒りWスタンを入れてトレードする。</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-[#b06000] font-bold shrink-0">2.</span>
+            <span><strong>初手はドランシールド＋ポーション固定</strong>。ドランブレードで調子に乗ると削り負ける。</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-[#b06000] font-bold shrink-0">3.</span>
+            <span><strong>1stリコールでプレートスチールキャップ（靴完成）を最優先</strong>。MS差をつけてE回転を歩いて交わせるようにする。</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 勝利時の最終ビルド ＆ 序盤購入順 (両方完備！) -->
+      <div class="space-y-3 pt-1 border-t border-[#e8eaed]">
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#137333] mb-1.5">
+            勝利時の推奨コアビルド (実績)
+          </h3>
+          <div class="bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e8eaed] flex items-center gap-1.5">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3153.png" class="item-slot" title="王剣">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3047.png" class="item-slot" title="プレートスチールキャップ">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3161.png" class="item-slot" title="ショウジンの矛">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3053.png" class="item-slot" title="ステラックの篭手">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3071.png" class="item-slot" title="黒斧">
+            <span class="text-[11px] text-[#5f6368] ml-2">靴完成 ➔ 王剣 ➔ ショウジン・ステラック</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#1967d2] mb-1.5">
+            勝利時の序盤購入ログ (14分まで)
+          </h3>
+          <div class="bg-[#f8f9fa] p-2.5 rounded-lg border border-[#e8eaed] text-xs flex items-center gap-2 overflow-x-auto">
+            <span class="px-2 py-0.5 bg-white border rounded text-[11px]">00:00: ドランシールド</span>
+            <span class="text-[#80868b]">→</span>
+            <span class="px-2 py-0.5 bg-white border border-[#1a73e8] rounded text-[11px] font-semibold text-[#1967d2]">04:20: ブーツ＋布の鎧</span>
+            <span class="text-[#80868b]">→</span>
+            <span class="px-2 py-0.5 bg-[#e8f0fe] border border-[#1a73e8] rounded text-[11px] font-bold text-[#1967d2]">07:50: スチールキャップ完成</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-3 border-t border-[#dadce0]">
+        <button onclick="closeCheatSheet()" class="px-4 py-2 text-xs font-bold text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-lg cursor-pointer">
+          閉じて試合に集中
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- モーダル2: 反省メモエディタ モーダル (UC-A3) -->
+  <!-- ================================================================= -->
+  <div id="noteModal" class="hidden fixed inset-0 z-50 bg-[#202124]/40 flex items-center justify-center p-4 backdrop-blur-2xs">
+    <div class="bg-white rounded-xl border border-[#dadce0] max-w-lg w-full p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-[#dadce0] pb-3">
+        <h3 class="font-bold text-sm text-[#202124]">
+          直前の試合の反省メモ (Renekton vs Jax)
+        </h3>
+        <button onclick="closeNoteModal()" class="text-[#5f6368] hover:text-[#202124] text-lg font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-[#5f6368] mb-1.5">難易度タグ</label>
+        <div class="flex gap-2">
+          <button type="button" class="flex-1 py-1.5 rounded-md border text-xs font-bold border-[#fce8b2] bg-[#fef7e0] text-[#b06000]">Hard</button>
+          <button type="button" class="flex-1 py-1.5 rounded-md border text-xs font-bold border-[#dadce0] bg-white text-[#5f6368]">Even</button>
+          <button type="button" class="flex-1 py-1.5 rounded-md border text-xs font-bold border-[#dadce0] bg-white text-[#5f6368]">Easy</button>
+        </div>
+      </div>
+
+      <!-- クイック要因チップス -->
+      <div>
+        <label class="block text-xs font-semibold text-[#5f6368] mb-1.5">敗因・反省要因 (タップでメモに追加)</label>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="addChip('ガンク被弾')" class="text-xs px-2.5 py-1 rounded-full border border-[#dadce0] bg-[#f8f9fa] hover:bg-[#e8eaed] cursor-pointer">+ ガンク被弾</button>
+          <button onclick="addChip('Lv1-3ソロキル被弾')" class="text-xs px-2.5 py-1 rounded-full border border-[#dadce0] bg-[#f8f9fa] hover:bg-[#e8eaed] cursor-pointer">+ Lv1-3ソロキル被弾</button>
+          <button onclick="addChip('ウェーブ管理ミス')" class="text-xs px-2.5 py-1 rounded-full border border-[#dadce0] bg-[#f8f9fa] hover:bg-[#e8eaed] cursor-pointer">+ ウェーブ管理ミス</button>
+          <button onclick="addChip('スキルCDトレード負け')" class="text-xs px-2.5 py-1 rounded-full border border-[#dadce0] bg-[#f8f9fa] hover:bg-[#e8eaed] cursor-pointer">+ スキルCDトレード負け</button>
+          <button onclick="addChip('集団戦寄り遅れ')" class="text-xs px-2.5 py-1 rounded-full border border-[#dadce0] bg-[#f8f9fa] hover:bg-[#e8eaed] cursor-pointer">+ 集団戦寄り遅れ</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-[#5f6368] mb-1.5">反省・対策メモ本文</label>
+        <textarea id="noteTextarea" rows="3" class="w-full p-3 bg-[#f8f9fa] border border-[#dadce0] focus:border-[#1a73e8] focus:bg-white rounded-lg text-xs outline-none" placeholder="気付きをメモ..."></textarea>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeNoteModal()" class="px-4 py-2 text-xs font-medium text-[#5f6368]">キャンセル</button>
+        <button onclick="saveNote()" class="px-5 py-2 text-xs font-bold text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-lg shadow-2xs cursor-pointer">
+          保存する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      const tabs = ['matchups', 'gap', 'history'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabBtn-${t}`);
+        const content = document.getElementById(`tabContent-${t}`);
+        if (t === tabId) {
+          btn.className = "pb-3 text-xs font-bold border-b-2 border-[#1a73e8] text-[#1a73e8] flex items-center gap-2 transition cursor-pointer";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "pb-3 text-xs font-semibold border-b-2 border-transparent text-[#5f6368] hover:text-[#202124] flex items-center gap-2 transition cursor-pointer";
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    function toggleAccordion(id) {
+      const detail = document.getElementById(`detail-${id}`);
+      const arrow = document.getElementById(`arrow-${id}`);
+      if (detail.classList.contains('hidden')) {
+        detail.classList.remove('hidden');
+        arrow.textContent = "▲";
+      } else {
+        detail.classList.add('hidden');
+        arrow.textContent = "▼";
+      }
+    }
+
+    function handleReverseSearch() {
+      const val = document.getElementById('reverseSearchInput').value.trim().toLowerCase();
+      const res = document.getElementById('reverseSearchResult');
+      if (val.length > 0) {
+        res.classList.remove('hidden');
+        document.getElementById('reverseOppName').textContent = val.charAt(0).toUpperCase() + val.slice(1);
+      } else {
+        res.classList.add('hidden');
+      }
+    }
+
+    function openCheatSheet(my, opp) {
+      document.getElementById('csMyChamp').textContent = my;
+      document.getElementById('csOppChamp').textContent = opp;
+      document.getElementById('csTargetChamp').textContent = opp;
+      document.getElementById('cheatSheetModal').classList.remove('hidden');
+    }
+    function closeCheatSheet() {
+      document.getElementById('cheatSheetModal').classList.add('hidden');
+    }
+
+    function openNoteModal(my, opp, hasContent) {
+      const textarea = document.getElementById('noteTextarea');
+      textarea.value = hasContent ? "【初手ドラン盾】 初手ドラン盾にして耐え、靴直行が大正解だった。" : "";
+      document.getElementById('noteModal').classList.remove('hidden');
+    }
+    function closeNoteModal() {
+      document.getElementById('noteModal').classList.add('hidden');
+    }
+    function addChip(label) {
+      const textarea = document.getElementById('noteTextarea');
+      const tag = `【${label}】`;
+      if (!textarea.value.includes(tag)) {
+        textarea.value = `${tag} ${textarea.value}`.trim();
+      }
+    }
+    function saveNote() {
+      closeNoteModal();
+      document.getElementById('recentBanner').className = "bg-white rounded-xl border border-[#dadce0] p-4 shadow-2xs transition";
+      document.getElementById('recentBanner').innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold text-[#137333]">✓ 直前試合の反省メモを記録済み</span>
+            <span class="text-xs text-[#5f6368]">"【ガンク被弾】 JaxのEがある時に仕掛けてしまった..."</span>
+          </div>
+          <button onclick="openNoteModal('Renekton', 'Jax', true)" class="text-xs text-[#1a73e8] hover:underline cursor-pointer">再編集</button>
+        </div>
+      `;
+      document.getElementById('globalNoteCount').textContent = "15 件";
+    }
+  </script>
+</body>
+</html>
