@@ -51,6 +51,10 @@
    - `production` 設定において、環境変数 `DATABASE_URL` が渡されている場合は PostgreSQL アダプター（接続プール付き）を使用。
    - `DATABASE_URL` が未指定の場合はローカル SQLite3（`storage/production.sqlite3`）にフォールバック。
    - 開発（`development`）・テスト（`test`）環境は引き続き軽量な SQLite3 をそのまま使用し、ローカル開発の俊敏性を維持。
+3. **PaaS環境における Solid Queue テーブル自動作成 (`db/migrate`)**:
+   - Railway等のクラウド環境では、PostgreSQLデータベースがプロビジョニング済み（既存）であるため、コンテナ起動時の `bin/rails db:prepare` は `db:schema:load` ではなく `db:migrate` のみを実行する。
+   - そのため、`db/queue_schema.rb` だけではテーブルが作成されず Puma 起動時に `PG::UndefinedTable: ERROR: relation "solid_queue_recurring_tasks" does not exist` となる。
+   - これを防ぐため、`backend/db/migrate/` に `unless table_exists?` ガード付きの Solid Queue / Cache テーブル作成マイグレーションを配置し、`DATABASE_URL` 単一DB構成でも自動的に必要なテーブル群が確実に作成される設計とした。
 
 ---
 
