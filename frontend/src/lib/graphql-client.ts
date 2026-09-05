@@ -241,8 +241,8 @@ export const GET_MATCHUP_DETAIL_QUERY = `
 
 // 反省メモの作成・更新 Mutation
 export const SAVE_MATCH_NOTE_MUTATION = `
-  mutation SaveMatchNote($matchParticipantId: ID!, $content: String!, $matchupTag: String) {
-    saveMatchNote(matchParticipantId: $matchParticipantId, content: $content, matchupTag: $matchupTag) {
+  mutation SaveMatchNote($input: SaveMatchNoteInput!) {
+    saveMatchNote(input: $input) {
       matchNote {
         id
         content

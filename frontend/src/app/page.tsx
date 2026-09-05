@@ -8,6 +8,7 @@ import { MatchList } from "@/components/MatchList";
 import { MatchupDashboard } from "@/components/MatchupDashboard";
 import { GapAnalysisDashboard } from "@/components/GapAnalysisDashboard";
 import { NoteEditorModal } from "@/components/NoteEditorModal";
+import { MatchDetailModal } from "@/components/MatchDetailModal";
 import { RecentMatchBanner } from "@/components/RecentMatchBanner";
 import { Summoner, MatchParticipant } from "@/types/graphql";
 import { fetchGraphQL, SEARCH_SUMMONER_QUERY, SAVE_MATCH_NOTE_MUTATION } from "@/lib/graphql-client";
@@ -23,6 +24,9 @@ export default function Home() {
 
   // メモ編集モーダル状態
   const [editingParticipant, setEditingParticipant] = useState<MatchParticipant | null>(null);
+
+  // 試合詳細モーダル状態
+  const [selectedMatchParticipant, setSelectedMatchParticipant] = useState<MatchParticipant | null>(null);
 
   // 試合履歴を試合日時 (gameCreation) の降順 (最新順) にソート
   const sortedParticipants = useMemo(() => {
@@ -121,9 +125,11 @@ export default function Home() {
     const data = await fetchGraphQL<{
       saveMatchNote: { matchNote: { id: string; content: string; matchupTag: string; updatedAt: string }; errors: string[] };
     }>(SAVE_MATCH_NOTE_MUTATION, {
-      matchParticipantId: participantId,
-      content,
-      matchupTag,
+      input: {
+        matchParticipantId: participantId,
+        content,
+        matchupTag,
+      },
     });
 
     if (data.saveMatchNote.errors && data.saveMatchNote.errors.length > 0) {
@@ -139,6 +145,13 @@ export default function Home() {
             ? { ...p, matchNote: data.saveMatchNote.matchNote }
             : p
         ),
+      });
+    }
+
+    if (selectedMatchParticipant && selectedMatchParticipant.id === participantId) {
+      setSelectedMatchParticipant({
+        ...selectedMatchParticipant,
+        matchNote: data.saveMatchNote.matchNote,
       });
     }
   };
@@ -181,6 +194,7 @@ export default function Home() {
               <RecentMatchBanner
                 latestParticipant={sortedParticipants[0]}
                 onEditNote={(participant) => setEditingParticipant(participant)}
+                onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
               />
             )}
 
@@ -194,21 +208,33 @@ export default function Home() {
                 tagLine={tagLine}
                 playedChampions={summoner.playedChampions || []}
                 onEditNote={(participant) => setEditingParticipant(participant)}
+                onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
               />
             ) : activeTab === "gap" ? (
               <GapAnalysisDashboard
                 participants={sortedParticipants}
                 onEditNote={(participant) => setEditingParticipant(participant)}
+                onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
               />
             ) : (
               <MatchList
                 participants={sortedParticipants}
                 onEditNote={(participant) => setEditingParticipant(participant)}
+                onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
               />
             )}
           </>
         ) : null}
       </main>
+
+      {/* Match Detail Modal (UC: 試合詳細・タイムライングラフ・キルピン・ビルド購入時系列) */}
+      <MatchDetailModal
+        key={selectedMatchParticipant?.id ?? "detail-closed"}
+        isOpen={!!selectedMatchParticipant}
+        participant={selectedMatchParticipant}
+        onClose={() => setSelectedMatchParticipant(null)}
+        onEditNote={(participant) => setEditingParticipant(participant)}
+      />
 
       {/* Note Editor Modal */}
       <NoteEditorModal
