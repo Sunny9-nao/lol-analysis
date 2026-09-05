@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_000000) do
   create_table "champions", force: :cascade do |t|
     t.string "champion_name"
     t.datetime "created_at", null: false
@@ -87,6 +87,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
     t.string "puuid", null: false
     t.json "raw_data"
     t.integer "summoner_level"
+    t.string "sync_error"
+    t.string "sync_status", default: "idle", null: false
     t.string "tag_line", null: false
     t.datetime "updated_at", null: false
     t.index ["game_name", "tag_line"], name: "index_summoners_on_game_name_and_tag_line"

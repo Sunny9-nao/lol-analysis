@@ -65,12 +65,12 @@ export const Header: React.FC<HeaderProps> = ({
                   type="button"
                   data-testid="header-sync-btn"
                   onClick={onSync}
-                  disabled={isLoading}
+                  disabled={isLoading || summoner?.syncStatus === "syncing"}
                   className="px-3 py-1.5 bg-[#e8f0fe] hover:bg-[#d2e3fc] text-[#1a73e8] text-xs font-bold rounded-lg border border-[#d2e3fc] transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   title="Riot APIから最新の試合データを取得"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                  <span>最新試合を同期</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading || summoner?.syncStatus === "syncing" ? "animate-spin" : ""}`} />
+                  <span>{summoner?.syncStatus === "syncing" ? "同期中..." : "最新試合を同期"}</span>
                 </button>
               )}
 

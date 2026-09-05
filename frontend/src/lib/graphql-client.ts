@@ -61,6 +61,8 @@ export const SEARCH_SUMMONER_QUERY = `
       isPrivate
       lastSyncedAt
       recentWinRate
+      syncStatus
+      syncError
       matchParticipants {
         id
         matchId
@@ -338,6 +340,8 @@ export const MY_SUMMONER_QUERY = `
       isPrivate
       lastSyncedAt
       recentWinRate
+      syncStatus
+      syncError
       matchParticipants {
         id
         matchId
@@ -461,6 +465,23 @@ export const DELETE_ACCOUNT_MUTATION = `
     deleteAccount(input: {}) {
       success
       errors
+    }
+  }
+`;
+
+// 試合同期の非同期開始 Mutation
+export const SYNC_MY_SUMMONER_MUTATION = `
+  mutation SyncMySummoner($force: Boolean) {
+    syncMySummoner(input: { force: $force }) {
+      syncStatus
+      errors
+      summoner {
+        id
+        gameName
+        tagLine
+        syncStatus
+        syncError
+      }
     }
   }
 `;

@@ -20,6 +20,7 @@ import {
   ME_QUERY,
   MY_SUMMONER_QUERY,
   SAVE_MATCH_NOTE_MUTATION,
+  SYNC_MY_SUMMONER_MUTATION,
   getAuthToken,
   removeAuthToken,
 } from "@/lib/graphql-client";
@@ -74,6 +75,42 @@ export default function Home() {
       setIsLoading(false);
     }
   }, []);
+
+  // 試合同期の非同期開始
+  const handleTriggerSync = useCallback(async () => {
+    try {
+      const res = await fetchGraphQL<{ syncMySummoner: { syncStatus: string; errors: string[] } }>(
+        SYNC_MY_SUMMONER_MUTATION,
+        { force: true }
+      );
+      if (res.syncMySummoner.errors && res.syncMySummoner.errors.length > 0) {
+        setError(res.syncMySummoner.errors.join(", "));
+      } else {
+        setSummoner((prev) => (prev ? { ...prev, syncStatus: "syncing" } : null));
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`同期リクエストの開始に失敗しました: ${errorMessage}`);
+    }
+  }, []);
+
+  // 非同期同期中のポーリング監視 (3秒間隔)
+  useEffect(() => {
+    if (summoner?.syncStatus !== "syncing") return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await fetchGraphQL<{ mySummoner: Summoner | null }>(MY_SUMMONER_QUERY, { force: false });
+        if (data.mySummoner) {
+          setSummoner(data.mySummoner);
+        }
+      } catch {
+        // ポーリング失敗時は画面を壊さないよう握りつぶす
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [summoner?.syncStatus]);
 
   // ログインユーザー情報のロード
   // 初回ロード (マウント時に認証とマイサモナーを初期化)
@@ -187,7 +224,7 @@ export default function Home() {
         user={currentUser}
         summoner={summoner}
         isLoading={isLoading}
-        onSync={() => loadMySummoner(true)}
+        onSync={handleTriggerSync}
         onLogout={handleLogout}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onDeleteAccount={() => setIsDeleteAccountModalOpen(true)}
@@ -213,7 +250,7 @@ export default function Home() {
             {/* Summoner Overview Card */}
             <SummonerProfile
               summoner={summoner}
-              onRefresh={() => loadMySummoner(true)}
+              onRefresh={handleTriggerSync}
               isRefreshing={isLoading}
             />
 

@@ -16,6 +16,8 @@ module Types
       field :is_private, Boolean, null: false, description: "Whether this account is private"
       field :last_synced_at, GraphQL::Types::ISO8601DateTime, null: true
       field :recent_win_rate, Float, null: true, description: "Win rate percentage across recorded matches"
+      field :sync_status, String, null: false, description: "Background sync status (idle, syncing, failed)"
+      field :sync_error, String, null: true, description: "Error message if sync failed"
 
       # 直近の参加試合レコード一覧 (最新順、デフォルトはRanked Solo/Duo: 420)
       field :match_participants, [ Types::Objects::MatchParticipantType ], null: false,

@@ -7,6 +7,7 @@ class Summoner < ApplicationRecord
 
   validates :puuid, presence: true, uniqueness: true
   validates :game_name, :tag_line, presence: true
+  validates :sync_status, inclusion: { in: %w[idle syncing failed] }
 
   def riot_id
     "#{game_name}##{tag_line}"

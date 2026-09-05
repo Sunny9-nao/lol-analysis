@@ -119,6 +119,8 @@ export interface Summoner {
   isPrivate: boolean;
   lastSyncedAt?: string | null;
   recentWinRate?: number | null;
+  syncStatus: "idle" | "syncing" | "failed";
+  syncError?: string | null;
   matchParticipants: MatchParticipant[];
   playedChampions: PlayedChampion[];
   matchupSummaries: MatchupSummary[];

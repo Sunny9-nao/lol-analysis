@@ -60,12 +60,17 @@ export const SummonerProfile: React.FC<SummonerProfileProps> = ({
             <span>•</span>
             <button
               onClick={onRefresh}
-              disabled={isRefreshing}
+              disabled={isRefreshing || summoner.syncStatus === "syncing"}
               className="text-[#1a73e8] hover:underline cursor-pointer flex items-center gap-1 disabled:opacity-50"
             >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
-              最新データを再取得
+              <RefreshCw className={`w-3 h-3 ${isRefreshing || summoner.syncStatus === "syncing" ? "animate-spin" : ""}`} />
+              {summoner.syncStatus === "syncing" ? "最新戦績を同期中..." : "最新データを再取得"}
             </button>
+            {summoner.syncStatus === "failed" && (
+              <span className="text-[#d93025] text-[11px] font-medium" title={summoner.syncError || undefined}>
+                (同期に失敗しました)
+              </span>
+            )}
           </p>
         </div>
       </div>

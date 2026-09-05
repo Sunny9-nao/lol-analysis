@@ -6,8 +6,9 @@ module Types
     field :sign_in, mutation: Mutations::SignIn
     field :sign_up, mutation: Mutations::SignUp
 
-    # サモナー連携
+    # サモナー連携・同期
     field :link_summoner, mutation: Mutations::LinkSummoner
+    field :sync_my_summoner, mutation: Mutations::SyncMySummoner
 
     # 試合反省メモの保存・更新
     field :save_match_note, mutation: Mutations::SaveMatchNote
