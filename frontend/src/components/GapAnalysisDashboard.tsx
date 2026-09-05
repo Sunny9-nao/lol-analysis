@@ -15,6 +15,7 @@ import {
 interface GapAnalysisDashboardProps {
   participants: MatchParticipant[];
   onEditNote: (participant: MatchParticipant) => void;
+  onSelectMatch?: (participant: MatchParticipant) => void;
 }
 
 interface QuadrantMatch {
@@ -26,6 +27,7 @@ interface QuadrantMatch {
 export const GapAnalysisDashboard: React.FC<GapAnalysisDashboardProps> = ({
   participants,
   onEditNote,
+  onSelectMatch,
 }) => {
   const [selectedQuadrant, setSelectedQuadrant] = useState<
     "win-loss" | "win-win" | "loss-win" | "loss-loss" | null
@@ -384,7 +386,8 @@ export const GapAnalysisDashboard: React.FC<GapAnalysisDashboardProps> = ({
               return (
                 <div
                   key={p.id}
-                  className="bg-[#f8f9fa] border border-[#e8eaed] hover:border-[#dadce0] rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs transition"
+                  onClick={() => onSelectMatch?.(p)}
+                  className="bg-[#f8f9fa] border border-[#e8eaed] hover:border-[#1a73e8]/50 rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs transition cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -442,21 +445,31 @@ export const GapAnalysisDashboard: React.FC<GapAnalysisDashboardProps> = ({
                     )}
                   </div>
 
-                  {/* Note snippet */}
-                  <div className="flex items-center gap-2 flex-1 max-w-sm">
-                    {note?.content ? (
-                      <p className="text-[11px] text-[#3c4043] truncate italic bg-white px-2 py-1 rounded border border-[#e8eaed] w-full">
-                        &ldquo;{note.content}&rdquo;
-                      </p>
-                    ) : (
-                      <span className="text-[11px] text-[#80868b] italic">（メモ未記入）</span>
-                    )}
+                  {/* Note snippet & Detail badge */}
+                  <div className="flex items-center gap-2 flex-1 max-w-sm justify-end">
+                    <div className="flex-1 min-w-0">
+                      {note?.content ? (
+                        <p className="text-[11px] text-[#3c4043] truncate italic bg-white px-2 py-1 rounded border border-[#e8eaed] w-full">
+                          &ldquo;{note.content}&rdquo;
+                        </p>
+                      ) : (
+                        <span className="text-[11px] text-[#80868b] italic">（メモ未記入）</span>
+                      )}
+                    </div>
                     <button
-                      onClick={() => onEditNote(p)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditNote(p);
+                      }}
                       className="text-xs text-[#1a73e8] hover:underline shrink-0 font-medium cursor-pointer"
                     >
                       {note?.content ? "編集" : "メモ追加"}
                     </button>
+                    {onSelectMatch && (
+                      <span className="text-[11px] font-bold text-[#1a73e8] bg-[#e8f0fe] group-hover:bg-[#d2e3fc] px-2 py-1 rounded transition whitespace-nowrap shrink-0">
+                        詳細
+                      </span>
+                    )}
                   </div>
                 </div>
               );

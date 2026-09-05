@@ -111,49 +111,22 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
       {/* グラフヘッダー & 凡例 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-[#202124]">対面Gold差推移 & キル発生タイムライン</span>
-          {opponentChampionName && (
-            <span className="text-[11px] text-[#5f6368]">
-              ({championName} vs {opponentChampionName})
-            </span>
-          )}
+          <span className="font-bold text-[#202124]">ゴールド比較タイムライン</span>
         </div>
 
-        {/* 凡例 */}
-        <div className="flex items-center gap-2.5 text-[10px] text-[#5f6368] font-medium flex-wrap">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-1 bg-[#1a73e8] rounded-full" />
-            <span>自有利 (+)</span>
+        {/* 凡例 (プロットのみに集約) */}
+        <div className="flex items-center gap-3 text-[10px] text-[#5f6368] font-medium flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#1a73e8] inline-block shadow-2xs" />
+            <span>自有利キル</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-1 bg-[#d93025] rounded-full" />
-            <span>対面有利 (-)</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d93025] inline-block shadow-2xs" />
+            <span>対面有利キル</span>
           </div>
-          <span className="text-[#dadce0]">|</span>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1a73e8] border border-white inline-block shadow-xs" />
-            <span>対面キル</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#1967d2] inline-block" />
-            <span>キル</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#12b5cb] inline-block" />
-            <span>対面デス</span>
-          </div>
-          <span className="text-[#dadce0]">|</span>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#d93025] border border-white inline-block shadow-xs" />
-            <span>対面にデス</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#c5221f] inline-block" />
-            <span>デス</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#e37400] inline-block" />
-            <span>対面キル</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full border-2 border-[#1a73e8] bg-white inline-block shadow-2xs" />
+            <span>直接対決</span>
           </div>
         </div>
       </div>
@@ -215,7 +188,7 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
             +{maxAbsDiff >= 1000 ? `${(maxAbsDiff / 1000).toFixed(1)}k` : maxAbsDiff}
           </text>
 
-          {/* 0G (五分) 基準線 */}
+          {/* 0 (五分) 基準線 */}
           <line
             x1={padding.left}
             y1={zeroY}
@@ -231,7 +204,7 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
             textAnchor="end"
             className="text-[9px] fill-[#5f6368] font-bold"
           >
-            0G
+            0
           </text>
 
           {/* -maxAbsDiff */}
@@ -310,30 +283,15 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
             />
           ))}
 
-          {/* キルイベントピン (自分または対面の関与) */}
+          {/* キルイベントピン (自有利: 青, 対面有利: 赤, 直接対決: 二重丸) */}
           {processedEvents.map((ev, idx) => {
-            const isSoloKill = ev.category === "solo_kill_opp";
-            const isDeathToOpp = ev.category === "death_to_opp";
-            const isMyKill = ev.category === "my_kill";
-            const isMyDeath = ev.category === "my_death";
-            const isOppDeath = ev.category === "opp_death";
-            const isOppKill = ev.category === "opp_kill";
+            const isDirectClash = ev.category === "solo_kill_opp" || ev.category === "death_to_opp";
+            const isSelfAdvantage =
+              ev.category === "solo_kill_opp" ||
+              ev.category === "my_kill" ||
+              ev.category === "opp_death";
 
-            const pinColor = isSoloKill
-              ? "#1a73e8"
-              : isDeathToOpp
-              ? "#d93025"
-              : isMyKill
-              ? "#1967d2"
-              : isMyDeath
-              ? "#c5221f"
-              : isOppDeath
-              ? "#12b5cb"
-              : isOppKill
-              ? "#e37400"
-              : "#5f6368";
-
-            const isDirectClash = isSoloKill || isDeathToOpp;
+            const pinColor = isSelfAdvantage ? "#1a73e8" : "#d93025";
             const baseRadius = isDirectClash ? 6 : 4.5;
             const isHovered = hoveredEvent?.event === ev;
             const currentRadius = isHovered ? baseRadius + 1.5 : baseRadius;
@@ -387,42 +345,52 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
         </svg>
 
         {/* ツールチップ (キルイベント) */}
-        {hoveredEvent && (
-          <div
-            style={{
-              left: `${(hoveredEvent.x / svgWidth) * 100}%`,
-              top: `${hoveredEvent.y - 10}px`,
-              transform: "translate(-50%, -100%)",
-            }}
-            className="absolute z-20 pointer-events-none bg-[#202124] text-white text-[10px] rounded-lg px-2.5 py-1.5 shadow-lg space-y-0.5 whitespace-nowrap animate-in fade-in duration-100"
-          >
-            <div className="flex items-center gap-1.5 font-bold">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  hoveredEvent.event.category === "solo_kill_opp"
-                    ? "bg-[#1a73e8]"
-                    : hoveredEvent.event.category === "my_kill"
-                    ? "bg-[#1967d2]"
-                    : hoveredEvent.event.category === "opp_death"
-                    ? "bg-[#12b5cb]"
-                    : hoveredEvent.event.category === "death_to_opp"
-                    ? "bg-[#d93025]"
-                    : hoveredEvent.event.category === "my_death"
-                    ? "bg-[#c5221f]"
-                    : hoveredEvent.event.category === "opp_kill"
-                    ? "bg-[#e37400]"
-                    : "bg-[#80868b]"
-                }`}
-              />
-              <span>
-                {hoveredEvent.event.timestamp} - {hoveredEvent.event.label}
-              </span>
+        {hoveredEvent && (() => {
+          const isSelf =
+            hoveredEvent.event.category === "solo_kill_opp" ||
+            hoveredEvent.event.category === "my_kill" ||
+            hoveredEvent.event.category === "opp_death";
+
+          const label =
+            hoveredEvent.event.category === "solo_kill_opp"
+              ? "対面を撃破"
+              : hoveredEvent.event.category === "death_to_opp"
+              ? "対面にデス"
+              : hoveredEvent.event.category === "my_kill"
+              ? "キル獲得"
+              : hoveredEvent.event.category === "my_death"
+              ? "自身がデス"
+              : hoveredEvent.event.category === "opp_kill"
+              ? "対面がキル獲得"
+              : hoveredEvent.event.category === "opp_death"
+              ? "対面がデス"
+              : hoveredEvent.event.label;
+
+          return (
+            <div
+              style={{
+                left: `${(hoveredEvent.x / svgWidth) * 100}%`,
+                top: `${hoveredEvent.y - 10}px`,
+                transform: "translate(-50%, -100%)",
+              }}
+              className="absolute z-20 pointer-events-none bg-[#202124] text-white text-[10px] rounded-lg px-2.5 py-1.5 shadow-lg space-y-0.5 whitespace-nowrap animate-in fade-in duration-100"
+            >
+              <div className="flex items-center gap-1.5 font-bold">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isSelf ? "bg-[#1a73e8]" : "bg-[#d93025]"
+                  }`}
+                />
+                <span>
+                  {hoveredEvent.event.timestamp} - {label}
+                </span>
+              </div>
+              <div className="text-[#dadce0] text-[9px]">
+                {hoveredEvent.event.killer} ➔ {hoveredEvent.event.victim}
+              </div>
             </div>
-            <div className="text-[#dadce0] text-[9px]">
-              {hoveredEvent.event.killer} ➔ {hoveredEvent.event.victim}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ツールチップ (毎分Goldポイント) */}
         {!hoveredEvent && hoveredPoint && (
@@ -443,7 +411,7 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
               }
             >
               {(hoveredPoint.point.goldDiff || 0) > 0 ? "+" : ""}
-              {(hoveredPoint.point.goldDiff || 0).toLocaleString()} G
+              {(hoveredPoint.point.goldDiff || 0).toLocaleString()} ゴールド
             </span>
           </div>
         )}

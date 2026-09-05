@@ -3,17 +3,19 @@
 import React from "react";
 import Image from "next/image";
 import { MatchParticipant } from "@/types/graphql";
-import { Edit3, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Edit3, CheckCircle2, Clock, AlertCircle, BarChart2 } from "lucide-react";
 import { formatMatchTime } from "@/lib/format";
 
 interface RecentMatchBannerProps {
   latestParticipant?: MatchParticipant | null;
   onEditNote: (participant: MatchParticipant) => void;
+  onSelectMatch?: (participant: MatchParticipant) => void;
 }
 
 export const RecentMatchBanner: React.FC<RecentMatchBannerProps> = ({
   latestParticipant,
   onEditNote,
+  onSelectMatch,
 }) => {
   if (!latestParticipant) return null;
 
@@ -150,10 +152,22 @@ export const RecentMatchBanner: React.FC<RecentMatchBannerProps> = ({
         </div>
 
         {/* Right Side: Note Action / Status */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap justify-end">
+          {onSelectMatch && (
+            <button
+              type="button"
+              data-testid="recent-match-detail-btn"
+              onClick={() => onSelectMatch(latestParticipant)}
+              className="text-xs font-bold text-[#3c4043] hover:text-[#1a73e8] bg-[#f8f9fa] hover:bg-[#e8f0fe] px-3 py-1.5 rounded-lg border border-[#dadce0] hover:border-[#d2e3fc] transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              <BarChart2 className="w-3.5 h-3.5 text-[#1a73e8]" />
+              詳細を見る
+            </button>
+          )}
+
           {hasNote ? (
             <div className="flex items-center gap-3">
-              <div className="text-right max-w-xs md:max-w-sm">
+              <div className="text-right max-w-xs md:max-w-sm hidden sm:block">
                 <span className="text-[11px] font-bold text-[#137333] flex items-center justify-end gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> メモ記録済み
                   {note?.matchupTag && (
@@ -175,7 +189,7 @@ export const RecentMatchBanner: React.FC<RecentMatchBannerProps> = ({
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
               <span className="text-xs text-[#b06000] font-medium bg-[#fef7e0] border border-[#fce8b2] px-2.5 py-1 rounded flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
                 メモ未記入

@@ -35,9 +35,6 @@ export const Tabs: React.FC<TabsProps> = ({ activeTab, onChange }) => {
       >
         <BarChart3 className="w-4 h-4" />
         Performance & Gap
-        <span className="text-[10px] bg-[#e8f0fe] text-[#1967d2] px-1.5 py-0.2 rounded font-bold">
-          New
-        </span>
       </button>
 
       <button

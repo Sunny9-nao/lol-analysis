@@ -99,11 +99,11 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                   : "bg-[#fce8e6] text-[#c5221f] border-[#fad2cf]"
               }`}
             >
-              {isWin ? "勝利 (VICTORY)" : "敗北 (DEFEAT)"}
+              {isWin ? "勝利" : "敗北"}
             </span>
 
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white text-[#3c4043] border border-[#dadce0]">
-              {participant.queueName || "Solo/Duo"}
+            <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#e8f0fe] text-[#1967d2] border border-[#d2e3fc]">
+              {participant.position || "TOP"}
             </span>
 
             <span className="text-xs text-[#5f6368] font-medium flex items-center gap-1">
@@ -222,7 +222,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                   {participant.cs} CS
                 </span>
                 <span className="text-[11px] text-[#5f6368] block">
-                  {participant.goldEarned ? `${(participant.goldEarned / 1000).toFixed(1)}k Gold` : ""}
+                  {participant.goldEarned ? `${(participant.goldEarned / 1000).toFixed(1)}k ゴールド` : ""}
                 </span>
               </div>
             </div>
@@ -266,8 +266,8 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                     }
                   >
                     {participant.goldDiffAt14 != null
-                      ? `${participant.goldDiffAt14 > 0 ? `+${participant.goldDiffAt14.toLocaleString()}` : participant.goldDiffAt14.toLocaleString()} G`
-                      : "- G"}
+                      ? `${participant.goldDiffAt14 > 0 ? `+${participant.goldDiffAt14.toLocaleString()}` : participant.goldDiffAt14.toLocaleString()} ゴールド`
+                      : "- ゴールド"}
                   </span>
                   <span className="text-[#dadce0] font-normal">/</span>
                   <span
