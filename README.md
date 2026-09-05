@@ -7,9 +7,11 @@ Ruby on Rails 8 による GraphQL BFF (Backend For Frontend) と、モダンフ�
 
 - [`docs/adr/`](./docs/adr/): アーキテクチャ決定記録 (Architecture Decision Records)
 - [`backend/`](./backend/): Rails 8 API + GraphQL-Ruby (SQLite)
-- `frontend/`: クライアントアプリケーション（予定）
+- [`frontend/`](./frontend/): Next.js 16 (React 19) + Tailwind CSS クライアント
 
-## クイックスタート (Backend)
+## クイックスタート
+
+### 1. Backend (Rails 8 API)
 
 ```bash
 cd backend
@@ -18,17 +20,22 @@ cd backend
 bundle install
 
 # データベース初期化 (SQLite)
-bin/rails db:create
+bin/rails db:create db:migrate db:seed
 
 # サーバー起動 (ポート3001)
 bin/rails s -p 3001
 ```
 
-### GraphQL エンドポイント検証
+### 2. Frontend (Next.js App)
 
 ```bash
-curl -X POST http://localhost:3001/graphql \
-  -H "Content-Type: application/json" \
-  -d '{"query": "{ testField }"}'
-# => {"data":{"testField":"Hello World!"}}
+cd frontend
+
+# 依存パッケージのインストール
+npm install
+
+# 開発サーバー起動 (ポート3000)
+npm run dev
 ```
+
+ブラウザで `http://localhost:3000` を開き、Riot ID（例: `Sunny9#hono`）を入力してサモナー検索・対面分析・反省メモ編集を利用できます。
