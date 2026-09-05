@@ -22,19 +22,51 @@ test:
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.
+# When DATABASE_URL is set (e.g., Render, Railway, Neon), PostgreSQL is used.
 production:
-  primary:
+  primary: &primary_production
+    <% if ENV["DATABASE_URL"] %>
+    adapter: postgresql
+    url: <%= ENV["DATABASE_URL"] %>
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    timeout: 5000
+    <% else %>
     <<: *default
     database: storage/production.sqlite3
+    <% end %>
   cache:
+    <% if ENV["SOLID_CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    adapter: postgresql
+    url: <%= ENV["SOLID_CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    timeout: 5000
+    migrations_paths: db/cache_migrate
+    <% else %>
     <<: *default
     database: storage/production_cache.sqlite3
     migrations_paths: db/cache_migrate
+    <% end %>
   queue:
+    <% if ENV["SOLID_QUEUE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    adapter: postgresql
+    url: <%= ENV["SOLID_QUEUE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    timeout: 5000
+    migrations_paths: db/queue_migrate
+    <% else %>
     <<: *default
     database: storage/production_queue.sqlite3
     migrations_paths: db/queue_migrate
+    <% end %>
   cable:
+    <% if ENV["SOLID_CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    adapter: postgresql
+    url: <%= ENV["SOLID_CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    timeout: 5000
+    migrations_paths: db/cable_migrate
+    <% else %>
     <<: *default
     database: storage/production_cable.sqlite3
     migrations_paths: db/cable_migrate
+    <% end %>
