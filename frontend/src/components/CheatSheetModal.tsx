@@ -35,9 +35,7 @@ export const CheatSheetModal: React.FC<CheatSheetModalProps> = ({
   if (!isOpen || !summary) return null;
 
   const oppName = summary.opponentChampion?.name || summary.opponentChampionName;
-  const oppImg = summary.opponentChampion?.imageUrl;
   const myName = detail?.champion?.name || myChampionName;
-  const myImg = detail?.champion?.imageUrl || `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${myChampionName}.png`;
 
   // 過去のメモ一覧 (重複除外・最新順)
   const notes = (detail?.participants || [])
@@ -242,10 +240,13 @@ export const CheatSheetModal: React.FC<CheatSheetModalProps> = ({
                         <span className="text-[10px] font-bold text-[#1a73e8] mr-0.5">{grp.timeLabel}</span>
                         <div className="flex items-center gap-1">
                           {grp.itemIds.map((itemId, iIdx) => (
-                            <img
+                            <Image
                               key={iIdx}
                               src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                               alt={`Item ${itemId}`}
+                              width={16}
+                              height={16}
+                              unoptimized
                               className="w-4 h-4 rounded object-cover"
                             />
                           ))}

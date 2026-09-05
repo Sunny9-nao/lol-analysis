@@ -2,12 +2,11 @@
 
 import React, { useState } from "react";
 import { GoldTimelinePoint, TimelineKillEvent } from "@/types/graphql";
-import { Swords, Skull, ShieldAlert } from "lucide-react";
 
 interface MatchTimelineGraphProps {
   goldTimeline?: GoldTimelinePoint[] | null;
   killEvents?: TimelineKillEvent[] | null;
-  championName: string;
+  championName?: string;
   opponentChampionName?: string | null;
 }
 
@@ -112,6 +111,11 @@ export const MatchTimelineGraph: React.FC<MatchTimelineGraphProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
           <span className="font-bold text-[#202124]">ゴールド比較タイムライン</span>
+          {championName && opponentChampionName && (
+            <span className="text-[11px] text-[#5f6368] font-medium hidden sm:inline">
+              ({championName} vs {opponentChampionName})
+            </span>
+          )}
         </div>
 
         {/* 凡例 (プロットのみに集約) */}

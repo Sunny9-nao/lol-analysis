@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, Edit3, Loader2, Sparkles, Check, Plus } from "lucide-react";
+import { X, Loader2, Sparkles, Check, Plus } from "lucide-react";
 import { MatchParticipant } from "@/types/graphql";
 
 interface NoteEditorModalProps {

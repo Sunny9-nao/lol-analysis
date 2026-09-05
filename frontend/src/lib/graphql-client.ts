@@ -1,5 +1,3 @@
-import { Summoner, MatchupDetail, MatchNote } from "@/types/graphql";
-
 const GRAPHQL_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:3001/graphql";
 
 export async function fetchGraphQL<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {

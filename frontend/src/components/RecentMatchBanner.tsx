@@ -116,10 +116,13 @@ export const RecentMatchBanner: React.FC<RecentMatchBannerProps> = ({
                 {Array.from({ length: 6 }).map((_, idx) => {
                   const itemId = mainItems[idx] || 0;
                   return itemId > 0 ? (
-                    <img
+                    <Image
                       key={idx}
                       src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                       alt=""
+                      width={22}
+                      height={22}
+                      unoptimized
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -134,9 +137,12 @@ export const RecentMatchBanner: React.FC<RecentMatchBannerProps> = ({
                   );
                 })}
                 {trinketItem > 0 ? (
-                  <img
+                  <Image
                     src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${trinketItem}.png`}
                     alt=""
+                    width={22}
+                    height={22}
+                    unoptimized
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                     }}

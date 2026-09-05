@@ -18,12 +18,10 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
 
   test('TC-A2-01 & TC-A2-04: カンペモーダルの展開、購入タイムライン表示、ESCキーでのクローズ', async ({ page }) => {
     // ガレンの行にあるカンペボタンを探してクリック
-    const garenRow = page.locator('div').filter({ hasText: /^ガレン/ }).first();
     const cheatBtn = page.getByRole('button', { name: 'カンペ' }).first();
     await cheatBtn.click();
 
     // カンペモーダルが表示されること
-    const modal = page.locator('div[role="dialog"]');
     await expect(page.locator('text=試合前カンペ')).toBeVisible();
 
     // 勝利時の序盤購入タイムラインが表示されること

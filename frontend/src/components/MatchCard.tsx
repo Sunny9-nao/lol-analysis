@@ -109,10 +109,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                 {participant.spells.slice(0, 2).map((spellId, idx) => {
                   const spellName = SPELL_IMG_MAP[spellId] || "SummonerFlash";
                   return (
-                    <img
+                    <Image
                       key={idx}
                       src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/${spellName}.png`}
                       alt=""
+                      width={12}
+                      height={12}
+                      unoptimized
                       className="w-3 h-3 rounded border border-white"
                     />
                   );
@@ -191,9 +194,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                 className="w-7 h-7 rounded-md bg-[#202124] border border-[#dadce0] overflow-hidden shrink-0 shadow-2xs"
               >
                 {itemId > 0 ? (
-                  <img
+                  <Image
                     src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                     alt=""
+                    width={28}
+                    height={28}
+                    unoptimized
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = "none";
@@ -209,9 +215,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         {/* Trinket */}
         <div className="w-7 h-7 rounded-full bg-[#202124] border border-[#dadce0] overflow-hidden ml-1 shrink-0 shadow-2xs">
           {trinket && trinket > 0 ? (
-            <img
+            <Image
               src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${trinket}.png`}
               alt=""
+              width={28}
+              height={28}
+              unoptimized
               className="w-full h-full object-cover"
             />
           ) : (
@@ -382,10 +391,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                     <span className="text-[10px] font-bold text-[#1a73e8] mr-0.5">{grp.timeLabel}</span>
                     <div className="flex items-center gap-1">
                       {grp.itemIds.map((itemId, iIdx) => (
-                        <img
+                        <Image
                           key={iIdx}
                           src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                           alt=""
+                          width={16}
+                          height={16}
+                          unoptimized
                           className="w-4 h-4 rounded object-cover"
                         />
                       ))}

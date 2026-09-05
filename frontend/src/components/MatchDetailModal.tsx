@@ -152,10 +152,13 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                       {participant.spells.slice(0, 2).map((spellId, idx) => {
                         const spellName = SPELL_IMG_MAP[spellId] || "SummonerFlash";
                         return (
-                          <img
+                          <Image
                             key={idx}
                             src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/${spellName}.png`}
                             alt=""
+                            width={14}
+                            height={14}
+                            unoptimized
                             className="w-3.5 h-3.5 rounded border border-white"
                           />
                         );
@@ -344,10 +347,13 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                       <span className="text-[11px] font-bold text-[#1a73e8] mr-0.5">{grp.timeLabel}</span>
                       <div className="flex items-center gap-1.5">
                         {grp.itemIds.map((itemId, iIdx) => (
-                          <img
+                          <Image
                             key={iIdx}
                             src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                             alt=""
+                            width={24}
+                            height={24}
+                            unoptimized
                             className="w-6 h-6 rounded-md object-cover border border-[#dadce0]"
                           />
                         ))}
@@ -371,9 +377,12 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                     className="w-8 h-8 rounded-lg bg-[#202124] border border-[#dadce0] overflow-hidden shrink-0"
                   >
                     {itemId > 0 ? (
-                      <img
+                      <Image
                         src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                         alt=""
+                        width={32}
+                        height={32}
+                        unoptimized
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = "none";
@@ -388,9 +397,12 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
               {/* Trinket */}
               <div className="w-8 h-8 rounded-full bg-[#202124] border border-[#dadce0] overflow-hidden ml-2 shrink-0">
                 {trinket && trinket > 0 ? (
-                  <img
+                  <Image
                     src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${trinket}.png`}
                     alt=""
+                    width={32}
+                    height={32}
+                    unoptimized
                     className="w-full h-full object-cover"
                   />
                 ) : (

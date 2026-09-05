@@ -256,7 +256,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                         : "bg-[#f8f9fa] border border-[#dadce0] text-[#3c4043] hover:bg-[#e8eaed]"
                     }`}
                   >
-                    <img src={imgUrl} alt={champ.championName} className="w-4 h-4 rounded object-cover" />
+                    <Image src={imgUrl} alt={champ.championName} width={16} height={16} unoptimized className="w-4 h-4 rounded object-cover" />
                     <span>{champ.champion?.name || champ.championName}</span>
                     <span
                       className={`px-1.5 py-0.2 rounded text-[10px] ${
@@ -331,9 +331,12 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                           {isTop ? "推奨 1" : `選択肢 ${idx + 1}`}
                         </span>
                         {rec.champion?.imageUrl && (
-                          <img
+                          <Image
                             src={rec.champion.imageUrl}
                             alt={rec.championName || ""}
+                            width={28}
+                            height={28}
+                            unoptimized
                             className="w-7 h-7 rounded object-cover"
                           />
                         )}
@@ -716,9 +719,12 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                                         className="w-6 h-6 rounded bg-[#202124] border border-[#dadce0] overflow-hidden shrink-0"
                                       >
                                         {itemId > 0 ? (
-                                          <img
+                                          <Image
                                             src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                                             alt=""
+                                            width={24}
+                                            height={24}
+                                            unoptimized
                                             className="w-full h-full object-cover"
                                           />
                                         ) : null}
@@ -784,10 +790,13 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                                         </span>
                                         <div className="flex items-center gap-1">
                                           {grp.itemIds.map((itemId, iIdx) => (
-                                            <img
+                                            <Image
                                               key={iIdx}
                                               src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${itemId}.png`}
                                               alt=""
+                                              width={16}
+                                              height={16}
+                                              unoptimized
                                               className="w-4 h-4 rounded object-cover"
                                             />
                                           ))}
