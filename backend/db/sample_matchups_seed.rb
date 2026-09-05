@@ -187,7 +187,11 @@ ActiveRecord::Base.transaction do
   end
 end
 
-# サモナーの最終同期日時を更新
-summoner.update!(last_synced_at: Time.current)
+# テストユーザーを作成してサモナーに紐付け
+test_user = User.find_or_initialize_by(email: "test@example.com")
+test_user.password = "password123"
+test_user.summoner = summoner
+test_user.save!
+puts "=== テストユーザーを作成しました: test@example.com / password123 (Auth Token: #{test_user.auth_token}) ==="
 
 puts "=== 完了: #{imported_count} 試合分のリアルな対面分析サンプルデータを投入しました！ ==="

@@ -3,6 +3,7 @@
 class Summoner < ApplicationRecord
   has_many :match_participants, dependent: :destroy
   has_many :matches, through: :match_participants
+  has_one :user, dependent: :nullify
 
   validates :puuid, presence: true, uniqueness: true
   validates :game_name, :tag_line, presence: true

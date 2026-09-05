@@ -19,6 +19,8 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
   end
 
   let!(:participant) { create(:match_participant) }
+  let!(:user) { User.create!(email: "author@example.com", password: "password123", summoner: participant.summoner) }
+  let(:context) { { current_user: user } }
 
   context "正常系" do
     it "メモが存在しない場合、新しく作成できること" do
@@ -30,7 +32,7 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
         }
       }
 
-      result = execute_graphql(mutation, variables: variables)
+      result = execute_graphql(mutation, variables: variables, context: context)
       data = result.dig("data", "saveMatchNote")
 
       expect(result["errors"]).to be_nil
@@ -57,7 +59,7 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
         }
       }
 
-      result = execute_graphql(mutation, variables: variables)
+      result = execute_graphql(mutation, variables: variables, context: context)
       data = result.dig("data", "saveMatchNote")
 
       expect(data["errors"]).to be_empty
@@ -76,7 +78,7 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
         }
       }
 
-      result = execute_graphql(mutation, variables: variables)
+      result = execute_graphql(mutation, variables: variables, context: context)
       data = result.dig("data", "saveMatchNote")
 
       expect(data["matchNote"]).to be_nil
@@ -91,7 +93,7 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
         }
       }
 
-      result = execute_graphql(mutation, variables: variables)
+      result = execute_graphql(mutation, variables: variables, context: context)
       data = result.dig("data", "saveMatchNote")
 
       expect(data["matchNote"]).to be_nil

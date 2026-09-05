@@ -12,8 +12,16 @@ module Mutations
     field :errors, [ String ], null: false, description: "エラーメッセージ一覧"
 
     def resolve(match_participant_id:, content:, matchup_tag: nil)
+      current_user = context[:current_user]
+      return { match_note: nil, errors: [ "ログインが必要です" ] } unless current_user
+
       participant = MatchParticipant.find_by(id: match_participant_id)
       return { match_note: nil, errors: [ "対象の試合記録が見つかりません" ] } unless participant
+
+      # 認可チェック: 自分のサモナーの試合記録であること
+      unless current_user.summoner_id.present? && participant.summoner_id == current_user.summoner_id
+        return { match_note: nil, errors: [ "権限がありません (他者の試合メモは編集できません)" ] }
+      end
 
       note = participant.match_note || participant.build_match_note
       note.content = content
