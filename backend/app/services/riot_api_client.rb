@@ -7,7 +7,45 @@ class RiotApiClient
   class RiotApiError < StandardError; end
   class AccountNotFoundError < RiotApiError; end
   class PrivateAccountError < RiotApiError; end
-  class RateLimitError < RiotApiError; end
+  class TimeoutError < RiotApiError; end
+
+  class RateLimitError < RiotApiError
+    attr_reader :retry_after
+
+    def initialize(message = "Riot API rate limit exceeded", retry_after: nil)
+      super(message)
+      @retry_after = retry_after
+    end
+  end
+
+  DEFAULT_OPEN_TIMEOUT = 3
+  DEFAULT_READ_TIMEOUT = 5
+  MAX_RETRIES = 3
+  INITIAL_BACKOFF = 0.5
+
+  @rate_limited_until = nil
+  @rate_limit_mutex = Mutex.new
+
+  class << self
+    attr_accessor :rate_limited_until
+
+    def set_rate_limit(seconds)
+      @rate_limit_mutex.synchronize do
+        @rate_limited_until = Time.current + seconds
+      end
+    end
+
+    def reset_rate_limit!
+      @rate_limit_mutex.synchronize do
+        @rate_limited_until = nil
+      end
+    end
+
+    def rate_limited?
+      until_time = @rate_limit_mutex.synchronize { @rate_limited_until }
+      until_time.present? && until_time > Time.current
+    end
+  end
 
   attr_reader :api_key
 
@@ -115,27 +153,96 @@ class RiotApiClient
     "https://#{routing_value}.api.riotgames.com"
   end
 
-  def get_json(host, path)
+  def get_json(host, path, max_retries: MAX_RETRIES)
+    wait_if_rate_limited!
+
+    attempt = 0
     conn = Faraday.new(url: host) do |f|
       f.headers["X-Riot-Token"] = api_key
+      f.options.open_timeout = DEFAULT_OPEN_TIMEOUT
+      f.options.timeout = DEFAULT_READ_TIMEOUT
       f.adapter Faraday.default_adapter
     end
 
-    response = conn.get(path)
+    loop do
+      attempt += 1
+      response = conn.get(path)
 
-    case response.status
-    when 200
-      JSON.parse(response.body)
-    when 404
-      raise AccountNotFoundError, "Resource not found at #{path}"
-    when 403, 401
-      # キー失効または非公開プロファイル
-      raise PrivateAccountError, "Access forbidden (private or unauthorized)"
-    when 429
-      raise RateLimitError, "Riot API rate limit exceeded"
-    else
-      raise RiotApiError, "Riot API returned status #{response.status}: #{response.body}"
+      case response.status
+      when 200
+        return JSON.parse(response.body)
+      when 404
+        raise AccountNotFoundError, "Resource not found at #{path}"
+      when 403, 401
+        raise PrivateAccountError, "Access forbidden (private or unauthorized)"
+      when 429
+        retry_after = parse_retry_after(response)
+        self.class.set_rate_limit(retry_after)
+
+        if attempt <= max_retries
+          sleep_with_jitter(retry_after)
+          next
+        end
+
+        raise RateLimitError.new("Riot API rate limit exceeded (Retry-After: #{retry_after}s)", retry_after: retry_after)
+      when 500, 502, 503, 504
+        if attempt <= max_retries
+          backoff = (INITIAL_BACKOFF * (2**(attempt - 1))) + rand(0.05..0.2)
+          sleep_duration(backoff)
+          next
+        end
+
+        raise RiotApiError, "Riot API server error #{response.status}: #{response.body}"
+      else
+        raise RiotApiError, "Riot API returned status #{response.status}: #{response.body}"
+      end
+    rescue Faraday::TimeoutError => e
+      if attempt <= max_retries
+        backoff = INITIAL_BACKOFF * (2**(attempt - 1))
+        sleep_duration(backoff)
+        next
+      end
+
+      raise TimeoutError, "Riot API request timed out: #{e.message}"
+    rescue Faraday::ConnectionFailed => e
+      if attempt <= max_retries
+        backoff = INITIAL_BACKOFF * (2**(attempt - 1))
+        sleep_duration(backoff)
+        next
+      end
+
+      if e.message =~ /timeout|execution expired/i
+        raise TimeoutError, "Riot API request timed out: #{e.message}"
+      else
+        raise RiotApiError, "Riot API connection failed: #{e.message}"
+      end
     end
+  end
+
+  def wait_if_rate_limited!
+    until_time = self.class.rate_limited_until
+    return unless until_time && until_time > Time.current
+
+    wait_sec = (until_time - Time.current).ceil
+    sleep_duration(wait_sec) if wait_sec.positive?
+  end
+
+  def parse_retry_after(response)
+    header = response.headers["Retry-After"]
+    if header.present? && header.to_i.positive?
+      header.to_i
+    else
+      2
+    end
+  end
+
+  def sleep_with_jitter(seconds)
+    jitter = rand(0.1..0.5)
+    sleep_duration(seconds + jitter)
+  end
+
+  def sleep_duration(seconds)
+    sleep(seconds)
   end
 
   def infer_platform(tag_line)
