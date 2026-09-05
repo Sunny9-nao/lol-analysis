@@ -16,7 +16,8 @@ export const SummonerProfile: React.FC<SummonerProfileProps> = ({
   onRefresh,
   isRefreshing,
 }) => {
-  const noteCount = summoner.matchParticipants.filter((p) => p.matchNote?.content).length;
+  const participants = summoner.matchParticipants || [];
+  const noteCount = participants.filter((p) => p.matchNote?.content).length;
   const iconUrl =
     summoner.profileIconUrl ||
     "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
@@ -74,7 +75,7 @@ export const SummonerProfile: React.FC<SummonerProfileProps> = ({
         <div className="bg-[#f8f9fa] border border-[#e8eaed] rounded-xl px-4 py-3 text-center min-w-[100px]">
           <span className="text-[11px] font-medium text-[#5f6368] block">記録試合数</span>
           <span className="text-lg font-bold text-[#202124]">
-            {summoner.matchParticipants.length} 試合
+            {participants.length} 試合
           </span>
         </div>
         <div className="bg-[#e8f0fe] border border-[#d2e3fc] rounded-xl px-4 py-3 text-center min-w-[110px]">

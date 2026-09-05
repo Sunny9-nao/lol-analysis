@@ -64,7 +64,7 @@ class SummonerSyncService
 
     # 未保存の試合のみ外部APIから取得
     if detail.blank?
-      sleep 0.06 # レートリミット対策 (最大秒間16リクエスト)
+      sleep 0.06 unless Rails.env.test? # レートリミット対策 (最大秒間16リクエスト)
       detail = client.fetch_match_detail(match_id, region: region)
     end
 
@@ -78,7 +78,7 @@ class SummonerSyncService
     # タイムラインの取得（未保存の場合のみ）
     timeline = match.raw_timeline.presence
     if timeline.blank?
-      sleep 0.06 # レートリミット対策
+      sleep 0.06 unless Rails.env.test? # レートリミット対策
       begin
         timeline = client.fetch_match_timeline(match_id, region: region)
       rescue RiotApiClient::RiotApiError => e
@@ -109,7 +109,7 @@ class SummonerSyncService
     end
 
     # アイテム一覧 (item0〜item6)
-    items = (0..6).map { |i| my_p["item#{i}"] }.reject(&:zero?)
+    items = (0..6).map { |i| my_p["item#{i}"] }.compact.reject(&:zero?)
     spells = [ my_p["summoner1Id"], my_p["summoner2Id"] ].compact
 
     # タイムライン解析（GD@14, CSD@14, 序盤アイテム購入ログ）

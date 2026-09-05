@@ -8,6 +8,7 @@ class MatchParticipant < ApplicationRecord
   belongs_to :opponent_champion, class_name: "Champion", foreign_key: :opponent_champion_name, primary_key: :champion_name, optional: true
 
   validates :champion_name, presence: true
+  validates :summoner_id, uniqueness: { scope: :match_id }
 
   def kda_ratio
     ((kills + assists) / [ deaths, 1 ].max.to_f).round(2)

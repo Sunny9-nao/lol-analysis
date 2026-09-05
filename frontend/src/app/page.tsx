@@ -288,13 +288,13 @@ export default function Home() {
         isOpen={isLinkModalOpen}
         onSuccess={(linkedSummoner) => {
           setIsLinkModalOpen(false);
-          setSummoner(linkedSummoner);
           if (currentUser) {
             setCurrentUser({
               ...currentUser,
               summoner: linkedSummoner,
             });
           }
+          void loadMySummoner(false);
         }}
       />
 

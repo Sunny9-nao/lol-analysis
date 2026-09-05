@@ -362,4 +362,62 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     await page.getByRole('button', { name: 'キャンセル' }).click();
     await expect(modal).toHaveCount(0);
   });
+
+  test('TC-A2-06: Matchup Labで対面チャンピオン名を入力すると対面カードが絞り込まれること', async ({ page }) => {
+    // 対面チャンピオン検索窓
+    const searchInput = page.getByPlaceholder('対面チャンピオン名で検索...');
+    await expect(searchInput).toBeVisible();
+
+    // 「ヨリック」または「Yorick」と入力
+    await searchInput.fill('ヨリック');
+
+    // ヨリック カードが表示され、他のカードは非表示になること
+    await expect(page.locator('h3').filter({ hasText: 'ヨリック' })).toBeVisible();
+    await expect(page.locator('h3').filter({ hasText: 'ガレン' })).toHaveCount(0);
+
+    // 入力をクリア
+    await searchInput.clear();
+    await expect(page.locator('h3').filter({ hasText: 'ガレン' })).toBeVisible();
+  });
+
+  test('TC-AUTH-03: 新規アカウントを作成し、アカウント削除を実行すると安全に初期状態へリセットされること', async ({ page }) => {
+    // ログアウト
+    const logoutBtn = page.locator('[data-testid="header-logout-btn"]');
+    await logoutBtn.click();
+
+    // サインインモーダルで「新規登録」タブに切り替え
+    await page.getByRole('button', { name: '新規登録' }).click();
+
+    // 新規登録
+    const testEmail = `test_temp_${Date.now()}@example.com`;
+    await page.locator('input[type="email"]').fill(testEmail);
+    await page.locator('input[type="password"]').fill('password123');
+    await page.locator('[data-testid="auth-submit-btn"]').click();
+
+    // サインアップ直後はサモナー未連携のため、Riot ID登録モーダルが表示されること
+    const linkModal = page.locator('[data-testid="link-summoner-modal"]');
+    await expect(linkModal).toBeVisible();
+
+    // サンプルサモナーを入力して連携完了
+    await page.locator('[data-testid="demo-summoner-btn"]').click();
+    await page.locator('[data-testid="link-submit-btn"]').click();
+
+    // 個人サモナー画面が表示されること
+    await expect(page.getByRole('heading', { name: 'Sunny9' })).toBeVisible({ timeout: 15000 });
+
+    // ヘッダーのアカウント削除ボタンをクリック
+    const deleteBtn = page.locator('[data-testid="header-delete-account-btn"]');
+    await expect(deleteBtn).toBeVisible();
+    await deleteBtn.click();
+
+    // 「アカウント削除」と入力して完全削除を実行
+    const deleteModal = page.getByRole('dialog');
+    await expect(deleteModal).toBeVisible();
+    await page.locator('#confirm-delete-input').fill('アカウント削除');
+    await page.getByRole('button', { name: '完全に削除する' }).click();
+
+    // 削除完了後にモーダルが閉じ、サインインモーダルが表示されること
+    await expect(deleteModal).toHaveCount(0);
+    await expect(page.locator('[data-testid="auth-modal"]')).toBeVisible();
+  });
 });
