@@ -16,3 +16,8 @@ build/
 # Ignore root env just in case
 .env
 .env.local
+
+# Local-only task management and evaluation documents
+docs/TODO.md
+docs/PUBLIC_RELEASE_TASKS.md
+docs/QUALITY_ASSESSMENT_*.md
