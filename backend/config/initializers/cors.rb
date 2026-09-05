@@ -20,7 +20,16 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
                     "http://127.0.0.1:5173"
                   ]
       end
-      allowed.include?(source)
+      allowed.include?("*") ||
+        allowed.include?(source) ||
+        allowed.any? do |origin|
+          if origin.include?("*")
+            regex = Regexp.new("\\A" + Regexp.escape(origin).gsub("\\*", ".*") + "\\z")
+            regex.match?(source)
+          else
+            false
+          end
+        end
     end
 
     resource "*",
