@@ -25,7 +25,7 @@ module Types
 
       def match_participants(queue_id: 420)
         return [] if object.is_private
-        scope = object.match_participants.joins(:match).includes(:match, :match_note, :champion, :opponent_champion)
+        scope = object.match_participants.joins(:match).includes(:match, :match_notes, :champion, :opponent_champion)
         scope = scope.where(matches: { queue_id: queue_id }) if queue_id.present?
         scope.order("matches.game_creation DESC")
       end
@@ -38,7 +38,7 @@ module Types
 
       def played_champions(position: nil)
         return [] if object.is_private
-        MatchupAnalysisService.new(summoner: object).played_champions(position: position)
+        MatchupAnalysisService.new(summoner: object, current_user: context[:current_user]).played_champions(position: position)
       end
 
       # 対面分析: 対面別サマリ一覧
@@ -50,7 +50,7 @@ module Types
 
       def matchup_summaries(champion_name:, position: nil)
         return [] if object.is_private
-        MatchupAnalysisService.new(summoner: object).summaries_for(champion_name: champion_name, position: position)
+        MatchupAnalysisService.new(summoner: object, current_user: context[:current_user]).summaries_for(champion_name: champion_name, position: position)
       end
 
       # 対面分析: 特定マッチアップ詳細
@@ -63,7 +63,7 @@ module Types
 
       def matchup_detail(champion_name:, opponent_champion_name:, position: nil)
         return nil if object.is_private
-        MatchupAnalysisService.new(summoner: object).detail_for(
+        MatchupAnalysisService.new(summoner: object, current_user: context[:current_user]).detail_for(
           champion_name: champion_name,
           opponent_champion_name: opponent_champion_name,
           position: position
@@ -79,7 +79,7 @@ module Types
 
       def counter_recommendations(opponent_champion_name:, position: nil)
         return [] if object.is_private
-        MatchupAnalysisService.new(summoner: object).counters_for(
+        MatchupAnalysisService.new(summoner: object, current_user: context[:current_user]).counters_for(
           opponent_champion_name: opponent_champion_name,
           position: position
         )

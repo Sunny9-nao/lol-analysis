@@ -43,13 +43,13 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
       expect(note["matchupTag"]).to eq("Hard")
 
       # DBの永続化検証
-      saved = participant.reload.match_note
+      saved = participant.reload.match_notes.find_by(user: user)
       expect(saved).not_to be_nil
       expect(saved.content).to eq("Lv1 Eスタートでミニオンを触らず耐える")
     end
 
     it "メモが既に存在する場合、内容を更新できること" do
-      create(:match_note, match_participant: participant, content: "初期メモ", matchup_tag: "Even")
+      create(:match_note, user: user, match_participant: participant, content: "初期メモ", matchup_tag: "Even")
 
       variables = {
         input: {
@@ -65,7 +65,29 @@ RSpec.describe "saveMatchNote ミューテーション", type: :request do
       expect(data["errors"]).to be_empty
       expect(data.dig("matchNote", "content")).to eq("更新されたメモ: Lv2先行を狙う")
       expect(data.dig("matchNote", "matchupTag")).to eq("Easy")
-      expect(participant.reload.match_note.content).to eq("更新されたメモ: Lv2先行を狙う")
+      expect(participant.reload.match_notes.find_by(user: user).content).to eq("更新されたメモ: Lv2先行を狙う")
+    end
+
+    it "同一試合に対して複数ユーザーが各自のメモを独立して保存でき、互いに干渉しないこと" do
+      user_b = User.create!(email: "user_b@example.com", password: "password123", summoner: participant.summoner)
+
+      # ユーザーAがメモを保存
+      execute_graphql(mutation, variables: {
+        input: { matchParticipantId: participant.id, content: "ユーザーAのメモ", matchupTag: "Hard" }
+      }, context: { current_user: user })
+
+      # ユーザーBが同じ試合に対して別のメモを保存
+      result_b = execute_graphql(mutation, variables: {
+        input: { matchParticipantId: participant.id, content: "ユーザーBのメモ", matchupTag: "Easy" }
+      }, context: { current_user: user_b })
+
+      expect(result_b.dig("data", "saveMatchNote", "errors")).to be_empty
+      expect(result_b.dig("data", "saveMatchNote", "matchNote", "content")).to eq("ユーザーBのメモ")
+
+      # DB上で2つのメモが独立して共存していること
+      expect(participant.reload.match_notes.count).to eq(2)
+      expect(participant.match_notes.find_by(user: user).content).to eq("ユーザーAのメモ")
+      expect(participant.match_notes.find_by(user: user_b).content).to eq("ユーザーBのメモ")
     end
   end
 

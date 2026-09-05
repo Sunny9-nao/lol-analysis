@@ -48,8 +48,13 @@ module Types
         timeline_analysis[:item_timeline]
       end
 
-      # 関連テーブル
       field :match_note, Types::Objects::MatchNoteType, null: true, description: "Personal note for this match"
+      def match_note
+        current_user = context[:current_user]
+        return nil unless current_user
+
+        object.match_notes.find_by(user_id: current_user.id)
+      end
       field :champion, Types::Objects::ChampionType, null: true, description: "自チャンピオンのマスタ情報"
       field :opponent_champion, Types::Objects::ChampionType, null: true, description: "対面チャンピオンのマスタ情報"
 

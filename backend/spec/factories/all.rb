@@ -36,7 +36,14 @@ FactoryBot.define do
     spells { [ 12, 4 ] }
   end
 
+  factory :user do
+    sequence(:email) { |n| "user_#{n}@example.com" }
+    password { "password123" }
+    summoner { nil }
+  end
+
   factory :match_note do
+    user
     match_participant
     content { "Lv1 Eスタートでミニオン触らず耐える" }
     matchup_tag { "Hard" }

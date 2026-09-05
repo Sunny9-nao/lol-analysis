@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
   create_table "champions", force: :cascade do |t|
     t.string "champion_name"
     t.datetime "created_at", null: false
@@ -27,7 +27,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_090000) do
     t.integer "match_participant_id", null: false
     t.string "matchup_tag"
     t.datetime "updated_at", null: false
-    t.index ["match_participant_id"], name: "index_match_notes_on_match_participant_id", unique: true
+    t.integer "user_id", null: false
+    t.index ["match_participant_id"], name: "index_match_notes_on_match_participant_id"
+    t.index ["user_id", "match_participant_id"], name: "index_match_notes_on_user_id_and_match_participant_id", unique: true
+    t.index ["user_id"], name: "index_match_notes_on_user_id"
   end
 
   create_table "match_participants", force: :cascade do |t|
@@ -99,10 +102,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_090000) do
     t.datetime "updated_at", null: false
     t.index ["auth_token"], name: "index_users_on_auth_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["summoner_id"], name: "index_users_on_summoner_id", unique: true
+    t.index ["summoner_id"], name: "index_users_on_summoner_id"
   end
 
   add_foreign_key "match_notes", "match_participants"
+  add_foreign_key "match_notes", "users"
   add_foreign_key "match_participants", "matches"
   add_foreign_key "match_participants", "summoners"
   add_foreign_key "users", "summoners"

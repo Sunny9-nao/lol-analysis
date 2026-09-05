@@ -34,8 +34,9 @@ RSpec.describe "GraphQL Matchup Analysis Queries", type: :request do
                                kills: 2, deaths: 6, assists: 1, cs: 140, items: [ 3078 ])
   end
 
-  let!(:note1) { create(:match_note, match_participant: part1, content: "耐えて後半勝ち", matchup_tag: "Hard", created_at: 1.day.ago) }
-  let!(:note2) { create(:match_note, match_participant: part2, content: "ソロキルされた", matchup_tag: "Hard", created_at: Time.current) }
+  let!(:user) { create(:user, summoner: summoner) }
+  let!(:note1) { create(:match_note, user: user, match_participant: part1, content: "耐えて後半勝ち", matchup_tag: "Hard", created_at: 1.day.ago) }
+  let!(:note2) { create(:match_note, user: user, match_participant: part2, content: "ソロキルされた", matchup_tag: "Hard", created_at: Time.current) }
 
   describe "playedChampions" do
     let(:query) do
@@ -179,7 +180,7 @@ RSpec.describe "GraphQL Matchup Analysis Queries", type: :request do
         tagLine: "hono",
         championName: "Jax",
         opponentChampionName: "Darius"
-      })
+      }, context: { current_user: user })
       detail = result.dig("data", "searchSummoner", "matchupDetail")
 
       expect(detail).not_to be_nil

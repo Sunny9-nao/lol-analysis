@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 class MatchupAnalysisService
-  attr_reader :summoner
+  attr_reader :summoner, :current_user
 
-  def initialize(summoner:)
+  def initialize(summoner:, current_user: nil)
     @summoner = summoner
+    @current_user = current_user
   end
 
   # 自サモナーがプレイしたチャンピオン一覧と勝率・試合数を返す
@@ -40,7 +41,7 @@ class MatchupAnalysisService
     scope = base_scope.where(champion_name: champion_name)
     scope = scope.where(position: position) if position.present?
 
-    participants = scope.includes(:match, :match_note).to_a
+    participants = scope.includes(:match, :match_notes).to_a
     grouped = participants.group_by(&:opponent_champion_name)
     champions_map = Champion.where(champion_name: grouped.keys).index_by(&:champion_name)
 
@@ -62,7 +63,7 @@ class MatchupAnalysisService
     scope = base_scope.where("LOWER(opponent_champion_name) = ?", target_name.downcase)
     scope = scope.where(position: position) if position.present?
 
-    participants = scope.includes(:match, :match_note).to_a
+    participants = scope.includes(:match, :match_notes).to_a
     return [] if participants.empty?
 
     grouped = participants.group_by(&:champion_name)
@@ -82,7 +83,7 @@ class MatchupAnalysisService
     scope = base_scope.where(champion_name: champion_name, opponent_champion_name: opponent_champion_name)
     scope = scope.where(position: position) if position.present?
 
-    parts = scope.includes(:match, :match_note, :champion, :opponent_champion)
+    parts = scope.includes(:match, :match_notes, :champion, :opponent_champion)
                  .order(created_at: :desc)
                  .to_a
 
@@ -127,7 +128,8 @@ class MatchupAnalysisService
       0.0
     end
 
-    notes = parts.map(&:match_note).compact
+    notes = parts.flat_map(&:match_notes).compact
+    notes = notes.select { |n| n.user_id == current_user.id } if current_user.present?
     hard_count = notes.count { |n| n.matchup_tag == "Hard" }
     even_count = notes.count { |n| n.matchup_tag == "Even" }
     easy_count = notes.count { |n| n.matchup_tag == "Easy" }

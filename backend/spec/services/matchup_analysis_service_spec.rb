@@ -125,7 +125,7 @@ RSpec.describe MatchupAnalysisService do
       expect(detail[:average_kda]).to eq(5.0)
       expect(detail[:average_cs_per_minute]).to eq(8.0)
       expect(detail[:participants].first).to eq(part1)
-      expect(detail[:participants].first.match_note).to eq(note)
+      expect(detail[:participants].first.match_notes).to include(note)
     end
   end
 end

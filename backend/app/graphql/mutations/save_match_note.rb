@@ -23,7 +23,7 @@ module Mutations
         return { match_note: nil, errors: [ "権限がありません (他者の試合メモは編集できません)" ] }
       end
 
-      note = participant.match_note || participant.build_match_note
+      note = MatchNote.find_or_initialize_by(user_id: current_user.id, match_participant_id: participant.id)
       note.content = content
       note.matchup_tag = matchup_tag if matchup_tag.present?
 

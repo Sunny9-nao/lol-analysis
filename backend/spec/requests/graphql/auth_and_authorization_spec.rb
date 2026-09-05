@@ -164,7 +164,7 @@ RSpec.describe "GraphQL Authentication & Authorization", type: :request do
       expect(data["matchNote"]).to be_nil
 
       # DBにメモが作成されていないこと
-      expect(other_participant.reload.match_note).to be_nil
+      expect(other_participant.reload.match_notes).to be_empty
     end
 
     it "allows editing user's own match note" do
@@ -186,7 +186,46 @@ RSpec.describe "GraphQL Authentication & Authorization", type: :request do
       expect(data.dig("matchNote", "matchupTag")).to eq("Hard")
 
       # DBに永続化されていること
-      expect(my_participant.reload.match_note.content).to eq("自分の試合の正しい反省メモ")
+      expect(my_participant.reload.match_notes.find_by(user: user).content).to eq("自分の試合の正しい反省メモ")
+    end
+
+    it "keeps notes completely isolated between two users linked to the same summoner" do
+      # ユーザーBも同じサモナーを連携している
+      user_b = User.create!(email: "co_user@example.com", password: "password123", summoner: my_summoner)
+
+      # ユーザーAがメモを作成
+      post "/graphql", params: {
+        query: mutation,
+        variables: { matchParticipantId: my_participant.id.to_s, content: "ユーザーAだけの秘密メモ" }
+      }.to_json, headers: headers.merge("Authorization" => "Bearer #{user.auth_token}")
+      expect(JSON.parse(response.body).dig("data", "saveMatchNote", "errors")).to be_empty
+
+      # ユーザーBが mySummoner クエリでその試合の matchNote を取得
+      my_summoner_query = <<~GQL
+        query {
+          mySummoner {
+            matchParticipants {
+              id
+              matchNote {
+                content
+              }
+            }
+          }
+        }
+      GQL
+
+      post "/graphql", params: { query: my_summoner_query }.to_json, headers: headers.merge("Authorization" => "Bearer #{user_b.auth_token}")
+      json_b = JSON.parse(response.body)
+      participant_data_for_b = json_b.dig("data", "mySummoner", "matchParticipants")&.find { |p| p["id"] == my_participant.id.to_s }
+
+      # ユーザーBにはユーザーAのメモは見えず、nil であること
+      expect(participant_data_for_b["matchNote"]).to be_nil
+
+      # ユーザーAが mySummoner クエリを取得した場合は、自分のメモが見えること
+      post "/graphql", params: { query: my_summoner_query }.to_json, headers: headers.merge("Authorization" => "Bearer #{user.auth_token}")
+      json_a = JSON.parse(response.body)
+      participant_data_for_a = json_a.dig("data", "mySummoner", "matchParticipants")&.find { |p| p["id"] == my_participant.id.to_s }
+      expect(participant_data_for_a.dig("matchNote", "content")).to eq("ユーザーAだけの秘密メモ")
     end
   end
 end

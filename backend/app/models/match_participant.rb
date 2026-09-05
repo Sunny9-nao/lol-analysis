@@ -3,7 +3,7 @@
 class MatchParticipant < ApplicationRecord
   belongs_to :summoner
   belongs_to :match
-  has_one :match_note, dependent: :destroy
+  has_many :match_notes, dependent: :destroy
   belongs_to :champion, foreign_key: :champion_name, primary_key: :champion_name, optional: true
   belongs_to :opponent_champion, class_name: "Champion", foreign_key: :opponent_champion_name, primary_key: :champion_name, optional: true
 
