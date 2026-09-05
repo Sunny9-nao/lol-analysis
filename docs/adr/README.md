@@ -25,3 +25,7 @@ ADR（Architecture Decision Record）は、ソフトウェア開発において�
 | [0004](./0004-tdd-and-testing-strategy.md) | TDD (テスト駆動開発) とテスト戦略の策定 | Accepted | 2026-09-05 | RSpec, FactoryBot, WebMockによるGraphQL/Service/Modelテスト方針 |
 | [0005](./0005-n-plus-one-query-mitigation.md) | GraphQLにおけるN+1クエリ対策方針 | Accepted | 2026-09-05 | includesとDataloaderによるバッチ取得とクエリ数監視テストの導入 |
 | [0006](./0006-champion-master-data-sync.md) | Data Dragonからのチャンピオンマスタデータ同期とリレーション設計 | Accepted | 2026-09-05 | db:seedによる全チャンピオン自動インポートとGraphQLへのマッピング |
+| [0007](./0007-matchup-analysis-design.md) | 対面分析（Matchup Analysis）機能の設計とGraphQLスキーマ策定 | Accepted | 2026-09-05 | 個人特化の対面勝率・CS/分・メモ集計クエリ設計と同期試合数の拡張 |
+| [0008](./0008-frontend-tech-stack-and-ui-design.md) | フロントエンド基盤の技術選定とGoogle風クリーンデザインUIの策定 | Accepted | 2026-09-05 | Next.js App Router + TypeScript + Tailwind CSSとタブ・アコーディオンUIの導入 |
+| [0009](./0009-scope-to-ranked-matches-and-queue-id.md) | 分析スコープのランクマッチ（Ranked Solo/Duo & Flex）への限定とqueue_id管理 | Accepted | 2026-09-05 | ランク向上に特化するためノーマル戦を除外しランク戦のみを集計対象化 |
+| [0010](./0010-usecase-driven-architecture-and-ui-design.md) | ソロランク向上ユースケースの実現方針と全体UI/情報設計アーキテクチャ | Accepted | 2026-09-05 | 逆引き・カンペ・直前反省・ギャップ分析等のユースケース別実現方針と3層3タブ情報設計 |
