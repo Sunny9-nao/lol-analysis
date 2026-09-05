@@ -13,6 +13,7 @@ interface MatchupDashboardProps {
   tagLine: string;
   playedChampions: PlayedChampion[];
   onEditNote: (participant: MatchParticipant) => void;
+  onSelectMatch?: (participant: MatchParticipant) => void;
 }
 
 export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
@@ -20,6 +21,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
   tagLine,
   playedChampions,
   onEditNote,
+  onSelectMatch,
 }) => {
   const [selectedChampion, setSelectedChampion] = useState<string>(
     playedChampions[0]?.championName || ""
@@ -656,12 +658,13 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                           return (
                             <div
                               key={p.id}
-                              className="bg-white rounded-xl border border-[#dadce0] p-4 flex flex-col gap-3 shadow-2xs"
+                              onClick={() => onSelectMatch?.(p)}
+                              className="bg-white rounded-xl border border-[#dadce0] hover:border-[#1a73e8]/50 p-4 flex flex-col gap-3 shadow-2xs transition cursor-pointer group"
                             >
                               {/* 上段: 勝敗、試合時間、KDA/CS/GD@14、ビルド、メモ */}
-                              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
                                 {/* 左ブロック: 勝敗 + 試合時間 + KDA + GD14 + ビルド */}
-                                <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-3 min-w-0 flex-1">
                                   {/* 勝敗バッジ (固定幅・改行防止) */}
                                   <span
                                     className={`w-14 text-center text-xs font-bold py-1 rounded-md border shrink-0 whitespace-nowrap ${
@@ -690,7 +693,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                                     </span>
                                   </div>
 
-                                  {/* GD@14 バッジ */}
+                                  {/* 14分差 バッジ */}
                                   {p.goldDiffAt14 != null && (
                                     <span
                                       className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
@@ -701,7 +704,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                                           : "bg-[#f1f3f4] text-[#5f6368] border border-[#dadce0]"
                                       }`}
                                     >
-                                      GD@14: {p.goldDiffAt14 > 0 ? `+${p.goldDiffAt14}` : p.goldDiffAt14} G
+                                      14分差: {p.goldDiffAt14 > 0 ? `+${p.goldDiffAt14}` : p.goldDiffAt14}
                                     </span>
                                   )}
 
@@ -724,32 +727,45 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                                   </div>
                                 </div>
 
-                                {/* 右ブロック: メモ欄 (全行同一幅で統一) */}
-                                <div className="bg-[#fff8e1] border border-[#ffe082] rounded-lg p-2 text-xs text-[#3c4043] flex items-center justify-between gap-2 lg:w-72 shrink-0">
-                                  <div className="flex items-center gap-1.5 overflow-hidden">
-                                    {note?.matchupTag && (
+                                {/* 右ブロック: メモ欄 & 詳細リンク (min-w-0 と truncate でカード枠内にはみ出さず収める) */}
+                                <div className="flex items-center gap-2 w-full lg:w-72 xl:w-80 min-w-0 shrink-0">
+                                  <div className="bg-[#fff8e1] border border-[#ffe082] rounded-lg p-2 text-xs text-[#3c4043] flex items-center justify-between gap-2 flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                      {note?.matchupTag && (
+                                        <span
+                                          className={`text-[10px] font-bold px-1.5 py-0.2 rounded text-white shrink-0 ${
+                                            note.matchupTag === "Hard"
+                                              ? "bg-[#b06000]"
+                                              : note.matchupTag === "Easy"
+                                              ? "bg-[#137333]"
+                                              : "bg-[#5f6368]"
+                                          }`}
+                                        >
+                                          {note.matchupTag}
+                                        </span>
+                                      )}
                                       <span
-                                        className={`text-[10px] font-bold px-1.5 py-0.2 rounded text-white shrink-0 ${
-                                          note.matchupTag === "Hard"
-                                            ? "bg-[#b06000]"
-                                            : note.matchupTag === "Easy"
-                                            ? "bg-[#137333]"
-                                            : "bg-[#5f6368]"
-                                        }`}
+                                        className="truncate text-[11px] text-[#3c4043] min-w-0 flex-1 block"
+                                        title={note?.content || ""}
                                       >
-                                        {note.matchupTag}
+                                        {note?.content || "（メモなし）"}
                                       </span>
-                                    )}
-                                    <span className="truncate text-[11px] text-[#3c4043]">
-                                      {note?.content || "（メモなし）"}
-                                    </span>
+                                    </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEditNote(p);
+                                      }}
+                                      className="text-[#1a73e8] hover:text-[#1557b0] text-[11px] font-bold shrink-0 cursor-pointer ml-1"
+                                    >
+                                      {note?.content ? "編集" : "追加"}
+                                    </button>
                                   </div>
-                                  <button
-                                    onClick={() => onEditNote(p)}
-                                    className="text-[#1a73e8] hover:text-[#1557b0] text-[11px] font-bold shrink-0 cursor-pointer"
-                                  >
-                                    {note?.content ? "編集" : "追加"}
-                                  </button>
+                                  {onSelectMatch && (
+                                    <span className="text-[11px] font-bold text-[#1a73e8] bg-[#e8f0fe] group-hover:bg-[#d2e3fc] px-2.5 py-1.5 rounded-md transition whitespace-nowrap hidden sm:inline-block shrink-0">
+                                      詳細
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 
