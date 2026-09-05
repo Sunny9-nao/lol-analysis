@@ -25,7 +25,7 @@ module Types
         k = object[:kills] || object["kills"] || 0
         d = object[:deaths] || object["deaths"] || 0
         a = object[:assists] || object["assists"] || 0
-        ((k + a) / [d, 1].max.to_f).round(2)
+        ((k + a) / [ d, 1 ].max.to_f).round(2)
       end
 
       # 試合時間（分:秒 形式の文字列）

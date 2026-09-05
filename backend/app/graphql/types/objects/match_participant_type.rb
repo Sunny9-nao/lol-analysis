@@ -17,8 +17,8 @@ module Types
       field :cs, Integer, null: false, description: "Total minions and neutral creeps killed"
       field :gold_earned, Integer, null: false
       field :total_damage_dealt, Integer, null: false
-      field :items, [Integer], null: true, description: "List of item IDs purchased"
-      field :spells, [Integer], null: true, description: "Summoner spell IDs"
+      field :items, [ Integer ], null: true, description: "List of item IDs purchased"
+      field :spells, [ Integer ], null: true, description: "Summoner spell IDs"
 
       field :kda_ratio, Float, null: false, description: "Calculated KDA ratio"
       field :formatted_duration, String, null: false, description: "Match duration (mm:ss)"
@@ -27,10 +27,10 @@ module Types
       field :gold_diff_at_14, Integer, null: true, description: "Gold difference against lane opponent at 14 minutes"
       field :cs_diff_at_14, Integer, null: true, description: "CS difference against lane opponent at 14 minutes"
       field :lane_outcome, String, null: true, description: "Objective lane outcome based on GD@14 (win, even, loss)"
-      field :early_items, [Types::Objects::EarlyItemType], null: true, description: "Early item purchase sequence up to 14 mins"
-      field :gold_timeline, [Types::Objects::GoldTimelinePointType], null: true, description: "Minute-by-minute gold difference against opponent"
-      field :kill_events, [Types::Objects::TimelineKillEventType], null: true, description: "Kill/death timeline events"
-      field :item_timeline, [Types::Objects::EarlyItemType], null: true, description: "Full-game item purchase timeline"
+      field :early_items, [ Types::Objects::EarlyItemType ], null: true, description: "Early item purchase sequence up to 14 mins"
+      field :gold_timeline, [ Types::Objects::GoldTimelinePointType ], null: true, description: "Minute-by-minute gold difference against opponent"
+      field :kill_events, [ Types::Objects::TimelineKillEventType ], null: true, description: "Kill/death timeline events"
+      field :item_timeline, [ Types::Objects::EarlyItemType ], null: true, description: "Full-game item purchase timeline"
 
       def gold_timeline
         timeline_analysis[:gold_timeline]

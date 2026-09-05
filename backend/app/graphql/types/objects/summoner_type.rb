@@ -18,7 +18,7 @@ module Types
       field :recent_win_rate, Float, null: true, description: "Win rate percentage across recorded matches"
 
       # 直近の参加試合レコード一覧 (最新順、デフォルトはRanked Solo/Duo: 420)
-      field :match_participants, [Types::Objects::MatchParticipantType], null: false,
+      field :match_participants, [ Types::Objects::MatchParticipantType ], null: false,
         description: "Participant records with matchup and item data" do
         argument :queue_id, Integer, required: false, default_value: 420, description: "Queue filter (420 for Ranked Solo/Duo)"
       end
@@ -31,7 +31,7 @@ module Types
       end
 
       # 対面分析: 使用チャンピオン一覧
-      field :played_champions, [Types::Objects::PlayedChampionType], null: false,
+      field :played_champions, [ Types::Objects::PlayedChampionType ], null: false,
         description: "List of champions played by this summoner with summary statistics" do
         argument :position, String, required: false, description: "Role filter (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY)"
       end
@@ -42,7 +42,7 @@ module Types
       end
 
       # 対面分析: 対面別サマリ一覧
-      field :matchup_summaries, [Types::Objects::MatchupSummaryType], null: false,
+      field :matchup_summaries, [ Types::Objects::MatchupSummaryType ], null: false,
         description: "Aggregated matchup summaries against opponents for a specific champion" do
         argument :champion_name, String, required: true, description: "Player champion identifier"
         argument :position, String, required: false, description: "Role filter (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY)"
@@ -71,7 +71,7 @@ module Types
       end
 
       # 対面分析: 相手チャンピオンに対する逆引きカウンターレコメンド
-      field :counter_recommendations, [Types::Objects::MatchupSummaryType], null: false,
+      field :counter_recommendations, [ Types::Objects::MatchupSummaryType ], null: false,
         description: "Your best champions against a specific opponent champion" do
         argument :opponent_champion_name, String, required: true, description: "Target opponent champion identifier"
         argument :position, String, required: false, description: "Role filter"

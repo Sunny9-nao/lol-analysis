@@ -25,13 +25,13 @@ RSpec.describe "GraphQL Matchup Analysis Queries", type: :request do
     create(:match_participant, summoner: summoner, match: match1,
                                champion_name: "Jax", opponent_champion_name: "Darius",
                                position: "TOP", win: true,
-                               kills: 6, deaths: 2, assists: 4, cs: 240, items: [3078, 3153])
+                               kills: 6, deaths: 2, assists: 4, cs: 240, items: [ 3078, 3153 ])
   end
   let!(:part2) do
     create(:match_participant, summoner: summoner, match: match2,
                                champion_name: "Jax", opponent_champion_name: "Darius",
                                position: "TOP", win: false,
-                               kills: 2, deaths: 6, assists: 1, cs: 140, items: [3078])
+                               kills: 2, deaths: 6, assists: 1, cs: 140, items: [ 3078 ])
   end
 
   let!(:note1) { create(:match_note, match_participant: part1, content: "耐えて後半勝ち", matchup_tag: "Hard", created_at: 1.day.ago) }

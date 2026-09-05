@@ -110,7 +110,7 @@ class SummonerSyncService
 
     # アイテム一覧 (item0〜item6)
     items = (0..6).map { |i| my_p["item#{i}"] }.reject(&:zero?)
-    spells = [my_p["summoner1Id"], my_p["summoner2Id"]].compact
+    spells = [ my_p["summoner1Id"], my_p["summoner2Id"] ].compact
 
     # タイムライン解析（GD@14, CSD@14, 序盤アイテム購入ログ）
     timeline_insights = TimelineAnalysisService.new(

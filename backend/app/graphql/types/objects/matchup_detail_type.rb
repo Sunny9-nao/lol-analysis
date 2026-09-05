@@ -18,7 +18,7 @@ module Types
 
       field :champion, Types::Objects::ChampionType, null: true, description: "Player champion master details"
       field :opponent_champion, Types::Objects::ChampionType, null: true, description: "Opponent champion master details"
-      field :participants, [Types::Objects::MatchParticipantType], null: false, description: "All individual match participant records"
+      field :participants, [ Types::Objects::MatchParticipantType ], null: false, description: "All individual match participant records"
     end
   end
 end

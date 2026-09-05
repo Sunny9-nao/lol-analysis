@@ -21,7 +21,7 @@ class TimelineAnalysisService
     return empty_result if frames.empty?
 
     # 14分時点（存在しなければ最終フレーム）を取得
-    target_frame_index = [14, frames.length - 1].min
+    target_frame_index = [ 14, frames.length - 1 ].min
     target_frame = frames[target_frame_index]
 
     gold_diff_at_14, cs_diff_at_14, lane_outcome = calculate_diffs(target_frame, my_pid, opp_pid)
@@ -45,7 +45,7 @@ class TimelineAnalysisService
 
   def resolve_participant_ids(participants)
     my_p = participants.find { |p| p["puuid"] == puuid }
-    return [nil, nil] unless my_p
+    return [ nil, nil ] unless my_p
 
     my_pid = my_p["participantId"]
     my_pos = my_p["teamPosition"].presence || my_p["individualPosition"]
@@ -58,13 +58,13 @@ class TimelineAnalysisService
     end
 
     opp_pid = opp_p&.dig("participantId")
-    [my_pid, opp_pid]
+    [ my_pid, opp_pid ]
   end
 
   def calculate_diffs(target_frame, my_pid, opp_pid)
     p_frames = target_frame["participantFrames"] || {}
     my_frame = p_frames[my_pid.to_s]
-    return [nil, nil, nil] unless my_frame
+    return [ nil, nil, nil ] unless my_frame
 
     my_gold = my_frame["totalGold"] || 0
     my_cs = (my_frame["minionsKilled"] || 0) + (my_frame["jungleMinionsKilled"] || 0)
@@ -78,15 +78,15 @@ class TimelineAnalysisService
 
       outcome = if gd >= 500 || csd >= 20
                   "win"
-                elsif gd <= -500 || csd <= -20
+      elsif gd <= -500 || csd <= -20
                   "loss"
-                else
+      else
                   "even"
-                end
+      end
 
-      [gd, csd, outcome]
+      [ gd, csd, outcome ]
     else
-      [nil, nil, nil]
+      [ nil, nil, nil ]
     end
   end
 
@@ -161,18 +161,18 @@ class TimelineAnalysisService
         is_opp_death = opp_pid && (victim_id == opp_pid)
 
         category, label = if is_my_kill && is_opp_death
-                            ["solo_kill_opp", "対面キル"]
-                          elsif is_opp_kill && is_my_death
-                            ["death_to_opp", "対面にデス"]
-                          elsif is_my_kill
-                            ["my_kill", "キル獲得"]
-                          elsif is_my_death
-                            ["my_death", "デス"]
-                          elsif is_opp_kill
-                            ["opp_kill", "対面がキル獲得"]
-                          elsif is_opp_death
-                            ["opp_death", "対面がデス"]
-                          end
+                            [ "solo_kill_opp", "対面キル" ]
+        elsif is_opp_kill && is_my_death
+                            [ "death_to_opp", "対面にデス" ]
+        elsif is_my_kill
+                            [ "my_kill", "キル獲得" ]
+        elsif is_my_death
+                            [ "my_death", "デス" ]
+        elsif is_opp_kill
+                            [ "opp_kill", "対面がキル獲得" ]
+        elsif is_opp_death
+                            [ "opp_death", "対面がデス" ]
+        end
 
         next unless category
 

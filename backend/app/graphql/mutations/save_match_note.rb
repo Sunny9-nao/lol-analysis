@@ -9,11 +9,11 @@ module Mutations
     argument :matchup_tag, String, required: false, description: "対面相性タグ (Hard, Even, Easy)"
 
     field :match_note, Types::Objects::MatchNoteType, null: true, description: "保存されたメモ"
-    field :errors, [String], null: false, description: "エラーメッセージ一覧"
+    field :errors, [ String ], null: false, description: "エラーメッセージ一覧"
 
     def resolve(match_participant_id:, content:, matchup_tag: nil)
       participant = MatchParticipant.find_by(id: match_participant_id)
-      return { match_note: nil, errors: ["対象の試合記録が見つかりません"] } unless participant
+      return { match_note: nil, errors: [ "対象の試合記録が見つかりません" ] } unless participant
 
       note = participant.match_note || participant.build_match_note
       note.content = content

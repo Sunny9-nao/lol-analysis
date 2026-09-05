@@ -44,7 +44,7 @@ RSpec.describe "GraphQL searchSummoner", type: :request do
         deaths: 9,
         assists: 2,
         cs: 292,
-        items: [6610, 3157, 6333]
+        items: [ 6610, 3157, 6333 ]
       )
     end
 
@@ -65,7 +65,7 @@ RSpec.describe "GraphQL searchSummoner", type: :request do
       expect(p["opponentChampionName"]).to eq("Yorick")
       expect(p["kdaRatio"]).to eq(0.67)
       expect(p["cs"]).to eq(292)
-      expect(p["items"]).to eq([6610, 3157, 6333])
+      expect(p["items"]).to eq([ 6610, 3157, 6333 ])
     end
   end
 

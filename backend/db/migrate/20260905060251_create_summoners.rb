@@ -13,6 +13,6 @@ class CreateSummoners < ActiveRecord::Migration[8.1]
       t.timestamps
     end
     add_index :summoners, :puuid, unique: true
-    add_index :summoners, [:game_name, :tag_line]
+    add_index :summoners, [ :game_name, :tag_line ]
   end
 end

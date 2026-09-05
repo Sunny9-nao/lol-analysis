@@ -10,7 +10,7 @@ class MatchParticipant < ApplicationRecord
   validates :champion_name, presence: true
 
   def kda_ratio
-    ((kills + assists) / [deaths, 1].max.to_f).round(2)
+    ((kills + assists) / [ deaths, 1 ].max.to_f).round(2)
   end
 
   def formatted_duration

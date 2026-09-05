@@ -32,7 +32,7 @@ class MatchupAnalysisService
         win_rate: win_rate,
         most_played_position: most_played_pos
       }
-    end.sort_by { |item| [-item[:match_count], -item[:win_rate]] }
+    end.sort_by { |item| [ -item[:match_count], -item[:win_rate] ] }
   end
 
   # 指定した自チャンピオンに対する対面チャンピオンごとの集計サマリ一覧を返す
@@ -47,7 +47,7 @@ class MatchupAnalysisService
     grouped.map do |opp_name, parts|
       stats = calculate_stats_for_group(opp_name, parts)
       stats.merge(opponent_champion: champions_map[opp_name])
-    end.sort_by { |item| [-item[:match_count], -item[:win_rate]] }
+    end.sort_by { |item| [ -item[:match_count], -item[:win_rate] ] }
   end
 
   # 指定した相手チャンピオンに対して、自チャンピオンごとの戦績比較サマリ一覧を返す（逆引き・カウンターレコメンド）
@@ -74,7 +74,7 @@ class MatchupAnalysisService
         champion_name: my_champ_name,
         champion: champions_map[my_champ_name]
       )
-    end.sort_by { |item| [-item[:win_rate], -item[:match_count]] }
+    end.sort_by { |item| [ -item[:win_rate], -item[:match_count] ] }
   end
 
   # 特定マッチアップの全試合記録と集計スタッツを返す
@@ -88,7 +88,7 @@ class MatchupAnalysisService
 
     return nil if parts.empty?
 
-    champions_map = Champion.where(champion_name: [champion_name, opponent_champion_name]).index_by(&:champion_name)
+    champions_map = Champion.where(champion_name: [ champion_name, opponent_champion_name ]).index_by(&:champion_name)
     stats = calculate_stats_for_group(opponent_champion_name, parts)
     stats.merge(
       champion_name: champion_name,
@@ -106,7 +106,7 @@ class MatchupAnalysisService
     summoner.match_participants
             .joins(:match)
             .where(matches: { queue_id: SOLO_DUO_QUEUE_ID })
-            .where.not(opponent_champion_name: [nil, ""])
+            .where.not(opponent_champion_name: [ nil, "" ])
   end
 
   def calculate_stats_for_group(opp_name, parts)
@@ -117,7 +117,7 @@ class MatchupAnalysisService
     total_k = parts.sum(&:kills)
     total_d = parts.sum(&:deaths)
     total_a = parts.sum(&:assists)
-    average_kda = ((total_k + total_a) / [total_d, 1].max.to_f).round(2)
+    average_kda = ((total_k + total_a) / [ total_d, 1 ].max.to_f).round(2)
 
     total_cs = parts.sum(&:cs)
     total_duration_sec = parts.sum { |p| p.match&.game_duration || 0 }

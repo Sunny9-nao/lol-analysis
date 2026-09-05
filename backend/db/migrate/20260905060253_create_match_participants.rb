@@ -19,7 +19,7 @@ class CreateMatchParticipants < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    add_index :match_participants, [:summoner_id, :match_id], unique: true
+    add_index :match_participants, [ :summoner_id, :match_id ], unique: true
     add_index :match_participants, :champion_name
     add_index :match_participants, :opponent_champion_name
     add_index :match_participants, :win

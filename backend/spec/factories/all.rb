@@ -32,8 +32,8 @@ FactoryBot.define do
     cs { 292 }
     gold_earned { 14444 }
     total_damage_dealt { 27187 }
-    items { [6610, 3157, 6333, 3047, 3153, 3340] }
-    spells { [12, 4] }
+    items { [ 6610, 3157, 6333, 3047, 3153, 3340 ] }
+    spells { [ 12, 4 ] }
   end
 
   factory :match_note do
