@@ -395,7 +395,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold text-[#c5221f] uppercase tracking-wider">
-                        天敵・要警戒
+                        苦手マッチアップ
                       </span>
                       <span className="text-xs font-bold text-[#202124]">
                         vs {worst.opponentChampion?.name || worst.opponentChampionName}
@@ -497,8 +497,8 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
               className="bg-white border border-[#dadce0] text-[#3c4043] rounded-lg px-2.5 py-1.5 outline-none text-xs cursor-pointer font-medium"
             >
               <option value="count">試合数が多い順</option>
-              <option value="worst">勝率が低い順 (苦手・天敵ワースト)</option>
-              <option value="best">勝率が高い順 (得意相性)</option>
+              <option value="worst">勝率が低い順 (苦手マッチアップ)</option>
+              <option value="best">勝率が高い順 (得意マッチアップ)</option>
               <option value="hard">Hardタグが多い順</option>
             </select>
           </div>
