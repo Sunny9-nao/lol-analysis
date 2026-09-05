@@ -1,0 +1,110 @@
+# frozen_string_literal: true
+
+class SummonerSyncService
+  attr_reader :client
+
+  def initialize(client: RiotApiClient.new)
+    @client = client
+  end
+
+  # サモナーを検索し、必要に応じてRiot APIと同期してActiveRecordを返す
+  def sync(game_name:, tag_line:, force: false)
+    summoner = Summoner.find_by(game_name: game_name, tag_line: tag_line)
+
+    # 1時間以内に同期済みかつforceでなければDBから即返却
+    if summoner.present? && !force && summoner.last_synced_at.present? && summoner.last_synced_at > 1.hour.ago
+      return summoner
+    end
+
+    # 1. Riot APIからアカウント情報を取得
+    account = client.fetch_account_by_riot_id(game_name, tag_line)
+    return nil unless account
+
+    puuid = account["puuid"]
+
+    # 2. サモナー詳細（レベル・アイコン）を取得
+    platform = client.send(:infer_platform, tag_line)
+    region   = client.send(:infer_region, platform)
+    sum_data = client.fetch_summoner_by_puuid(puuid, platform: platform)
+
+    # 3. Summoner レコードを Upsert
+    summoner ||= Summoner.find_or_initialize_by(puuid: puuid)
+    summoner.assign_attributes(
+      game_name: account["gameName"],
+      tag_line: account["tagLine"],
+      summoner_level: sum_data["summonerLevel"],
+      profile_icon_id: sum_data["profileIconId"],
+      is_private: false,
+      last_synced_at: Time.current,
+      raw_data: { account: account, summoner: sum_data }
+    )
+    summoner.save!
+
+    # 4. 直近の試合を取得して保存 (最新3件)
+    match_ids = client.fetch_match_ids_by_puuid(puuid, count: 3, region: region)
+    match_ids.each do |match_id|
+      sync_match(match_id: match_id, summoner: summoner, region: region)
+    end
+
+    summoner.reload
+  rescue RiotApiClient::AccountNotFoundError
+    nil
+  rescue RiotApiClient::PrivateAccountError
+    # 非公開アカウントの場合
+    summoner ||= Summoner.find_or_initialize_by(game_name: game_name, tag_line: tag_line)
+    summoner.update(is_private: true, last_synced_at: Time.current)
+    summoner
+  end
+
+  private
+
+  def sync_match(match_id:, summoner:, region:)
+    detail = client.fetch_match_detail(match_id, region: region)
+    info = detail["info"]
+    return unless info
+
+    # 1. Match レコードを Upsert (10人分の生JSON raw_info を保存)
+    game_creation_time = Time.at(info["gameCreation"] / 1000.0) rescue Time.current
+    match = Match.find_or_initialize_by(match_id: match_id)
+    match.update!(
+      game_mode: info["gameMode"],
+      game_duration: info["gameDuration"],
+      game_creation: game_creation_time,
+      raw_info: detail
+    )
+
+    # 2. 該当プレイヤーと対面プレイヤーの特定
+    participants = info["participants"] || []
+    my_p = participants.find { |p| p["puuid"] == summoner.puuid }
+    return unless my_p
+
+    # 対面（同じレーンポジションで敵チーム）の特定
+    my_pos = my_p["teamPosition"].presence || my_p["individualPosition"]
+    opp_p = participants.find do |p|
+      pos = p["teamPosition"].presence || p["individualPosition"]
+      pos == my_pos && p["teamId"] != my_p["teamId"]
+    end
+
+    # アイテム一覧 (item0〜item6)
+    items = (0..6).map { |i| my_p["item#{i}"] }.reject(&:zero?)
+    spells = [my_p["summoner1Id"], my_p["summoner2Id"]].compact
+
+    # 3. MatchParticipant を Upsert (本人分156項目生JSON raw_participant を保存)
+    participant = MatchParticipant.find_or_initialize_by(summoner: summoner, match: match)
+    participant.update!(
+      champion_name: my_p["championName"],
+      opponent_champion_name: opp_p&.dig("championName"),
+      position: my_pos,
+      win: my_p["win"],
+      kills: my_p["kills"] || 0,
+      deaths: my_p["deaths"] || 0,
+      assists: my_p["assists"] || 0,
+      cs: (my_p["totalMinionsKilled"] || 0) + (my_p["neutralMinionsKilled"] || 0),
+      gold_earned: my_p["goldEarned"] || 0,
+      total_damage_dealt: my_p["totalDamageDealtToChampions"] || 0,
+      items: items,
+      spells: spells,
+      raw_participant: my_p
+    )
+  end
+end
