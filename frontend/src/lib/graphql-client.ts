@@ -1,11 +1,35 @@
 const GRAPHQL_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:3001/graphql";
 
+const AUTH_TOKEN_KEY = "lol_rankup_auth_token";
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export function removeAuthToken(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
 export async function fetchGraphQL<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
   });
@@ -282,3 +306,152 @@ export const GET_COUNTER_RECOMMENDATIONS_QUERY = `
     }
   }
 `;
+
+// ログイン中のユーザー自身のアカウント情報
+export const ME_QUERY = `
+  query Me {
+    me {
+      id
+      email
+      summoner {
+        id
+        gameName
+        tagLine
+        riotId
+      }
+    }
+  }
+`;
+
+// ログインユーザー本人のサモナーデータ取得（個人専用）
+export const MY_SUMMONER_QUERY = `
+  query MySummoner($force: Boolean) {
+    mySummoner(force: $force) {
+      id
+      puuid
+      gameName
+      tagLine
+      riotId
+      summonerLevel
+      profileIconId
+      profileIconUrl
+      isPrivate
+      lastSyncedAt
+      recentWinRate
+      matchParticipants {
+        id
+        matchId
+        championName
+        opponentChampionName
+        win
+        kills
+        deaths
+        assists
+        cs
+        goldEarned
+        totalDamageDealt
+        items
+        spells
+        laneOutcome
+        gameDuration
+        gameCreation
+        goldDiffAt14
+        csDiffAt14
+        matchNote {
+          id
+          content
+          matchupTag
+          updatedAt
+        }
+        earlyItems {
+          timestamp
+          itemId
+        }
+        goldTimeline {
+          minute
+          goldDiff
+          myGold
+          oppGold
+        }
+        killEvents {
+          minute
+          timestamp
+          category
+          label
+          killer
+          victim
+        }
+        itemTimeline {
+          timestamp
+          itemId
+        }
+      }
+      playedChampions {
+        championName
+        matchCount
+        winCount
+        winRate
+        mostPlayedPosition
+        champion {
+          name
+          title
+          imageUrl
+        }
+      }
+    }
+  }
+`;
+
+// サインイン Mutation
+export const SIGN_IN_MUTATION = `
+  mutation SignIn($email: String!, $password: String!) {
+    signIn(input: { email: $email, password: $password }) {
+      user {
+        id
+        email
+        summoner {
+          id
+          gameName
+          tagLine
+          riotId
+        }
+      }
+      authToken
+      errors
+    }
+  }
+`;
+
+// サインアップ Mutation
+export const SIGN_UP_MUTATION = `
+  mutation SignUp($email: String!, $password: String!) {
+    signUp(input: { email: $email, password: $password }) {
+      user {
+        id
+        email
+      }
+      authToken
+      errors
+    }
+  }
+`;
+
+// 自身の Riot ID 登録・連携 Mutation
+export const LINK_SUMMONER_MUTATION = `
+  mutation LinkSummoner($gameName: String!, $tagLine: String!) {
+    linkSummoner(input: { gameName: $gameName, tagLine: $tagLine }) {
+      user {
+        id
+        email
+      }
+      summoner {
+        id
+        gameName
+        tagLine
+        riotId
+      }
+      errors
+    }
+  }
+`;
+

@@ -125,3 +125,12 @@ export interface Summoner {
   matchupDetail?: MatchupDetail | null;
   counterRecommendations?: MatchupSummary[];
 }
+
+export interface User {
+  id: string;
+  email: string;
+  authToken?: string | null;
+  summoner?: Summoner | null;
+  createdAt?: string;
+  updatedAt?: string;
+}

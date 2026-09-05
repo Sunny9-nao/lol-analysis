@@ -10,25 +10,33 @@ import { GapAnalysisDashboard } from "@/components/GapAnalysisDashboard";
 import { NoteEditorModal } from "@/components/NoteEditorModal";
 import { MatchDetailModal } from "@/components/MatchDetailModal";
 import { RecentMatchBanner } from "@/components/RecentMatchBanner";
-import { Summoner, MatchParticipant } from "@/types/graphql";
-import { fetchGraphQL, SEARCH_SUMMONER_QUERY, SAVE_MATCH_NOTE_MUTATION } from "@/lib/graphql-client";
+import { AuthModal } from "@/components/AuthModal";
+import { LinkSummonerModal } from "@/components/LinkSummonerModal";
+import { Summoner, MatchParticipant, User } from "@/types/graphql";
+import {
+  fetchGraphQL,
+  ME_QUERY,
+  MY_SUMMONER_QUERY,
+  SAVE_MATCH_NOTE_MUTATION,
+  getAuthToken,
+  removeAuthToken,
+} from "@/lib/graphql-client";
 import { Loader2, AlertCircle } from "lucide-react";
 
 export default function Home() {
-  const [gameName, setGameName] = useState<string>("Sunny9");
-  const [tagLine, setTagLine] = useState<string>("hono");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [summoner, setSummoner] = useState<Summoner | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("matchups");
 
-  // メモ編集モーダル状態
+  // モーダル状態
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState<boolean>(false);
   const [editingParticipant, setEditingParticipant] = useState<MatchParticipant | null>(null);
-
-  // 試合詳細モーダル状態
   const [selectedMatchParticipant, setSelectedMatchParticipant] = useState<MatchParticipant | null>(null);
 
-  // 試合履歴を試合日時 (gameCreation) の降順 (最新順) にソート
+  // 試合履歴を降順 (最新順) にソート
   const sortedParticipants = useMemo(() => {
     return [...(summoner?.matchParticipants || [])].sort((a, b) => {
       const timeA = a.gameCreation ? new Date(a.gameCreation).getTime() : 0;
@@ -37,88 +45,83 @@ export default function Home() {
     });
   }, [summoner?.matchParticipants]);
 
-  // サモナー検索関数
-  const loadSummoner = useCallback(async (name: string, tag: string, force: boolean = false) => {
+  // ログインユーザー本人のサモナーデータを取得
+  const loadMySummoner = useCallback(async (force: boolean = false) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchGraphQL<{ searchSummoner: Summoner | null }>(SEARCH_SUMMONER_QUERY, {
-        gameName: name,
-        tagLine: tag,
-        force,
-      });
+      const data = await fetchGraphQL<{ mySummoner: Summoner | null }>(MY_SUMMONER_QUERY, { force });
 
-      if (!data.searchSummoner) {
-        setError(`サモナー "${name}#${tag}" が見つかりませんでした。`);
+      if (!data.mySummoner) {
         setSummoner(null);
+        setIsLinkModalOpen(true);
       } else {
-        setSummoner(data.searchSummoner);
-        setGameName(name);
-        setTagLine(tag);
-        // LocalStorageに保存
-        if (typeof window !== "undefined") {
-          localStorage.setItem("lol_analysis_last_summoner", `${name}#${tag}`);
-        }
+        setSummoner(data.mySummoner);
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(`データの取得に失敗しました: ${errorMessage}`);
-      setSummoner(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // 初期ロード (LocalStorageから復元、なければSunny9#hono)
+  // ログインユーザー情報のロード
+  // 初回ロード (マウント時に認証とマイサモナーを初期化)
   useEffect(() => {
-    let isCurrent = true;
-    let initialName = "Sunny9";
-    let initialTag = "hono";
+    let isMounted = true;
 
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lol_analysis_last_summoner");
-      if (saved && saved.includes("#")) {
-        const [n, t] = saved.split("#");
-        if (n && t) {
-          initialName = n;
-          initialTag = t;
+    const initAuth = async () => {
+      const token = getAuthToken();
+      if (!token) {
+        if (isMounted) {
+          setIsLoading(false);
+          setIsAuthModalOpen(true);
         }
+        return;
       }
-    }
 
-    const loadInitialSummoner = async () => {
       try {
-        const data = await fetchGraphQL<{ searchSummoner: Summoner | null }>(SEARCH_SUMMONER_QUERY, {
-          gameName: initialName,
-          tagLine: initialTag,
-          force: false,
-        });
-        if (!isCurrent) return;
+        const data = await fetchGraphQL<{ me: User | null }>(ME_QUERY);
+        if (!isMounted) return;
 
-        if (!data.searchSummoner) {
-          setError(`サモナー "${initialName}#${initialTag}" が見つかりませんでした。`);
-          setSummoner(null);
+        if (data.me) {
+          setCurrentUser(data.me);
+          if (data.me.summoner) {
+            await loadMySummoner(false);
+          } else {
+            setIsLoading(false);
+            setIsLinkModalOpen(true);
+          }
         } else {
-          setSummoner(data.searchSummoner);
-          setGameName(initialName);
-          setTagLine(initialTag);
-          localStorage.setItem("lol_analysis_last_summoner", `${initialName}#${initialTag}`);
+          removeAuthToken();
+          setCurrentUser(null);
+          setIsAuthModalOpen(true);
+          setIsLoading(false);
         }
-      } catch (err: unknown) {
-        if (!isCurrent) return;
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(`データの取得に失敗しました: ${errorMessage}`);
-        setSummoner(null);
-      } finally {
-        if (isCurrent) setIsLoading(false);
+      } catch {
+        if (!isMounted) return;
+        removeAuthToken();
+        setCurrentUser(null);
+        setIsAuthModalOpen(true);
+        setIsLoading(false);
       }
     };
 
-    void loadInitialSummoner();
+    void initAuth();
+
     return () => {
-      isCurrent = false;
+      isMounted = false;
     };
-  }, []);
+  }, [loadMySummoner]);
+
+  // ログアウト処理
+  const handleLogout = () => {
+    removeAuthToken();
+    setCurrentUser(null);
+    setSummoner(null);
+    setIsAuthModalOpen(true);
+  };
 
   // メモ保存処理
   const handleSaveNote = async (participantId: string, content: string, matchupTag: string) => {
@@ -158,11 +161,14 @@ export default function Home() {
 
   return (
     <div className="bg-[#f8f9fa] text-[#202124] min-h-screen antialiased flex flex-col">
-      {/* Google Style Header */}
+      {/* Header (個人専用ダッシュボード / 同期 / ログアウト) */}
       <Header
-        onSearch={(name, tag) => loadSummoner(name, tag)}
+        user={currentUser}
+        summoner={summoner}
         isLoading={isLoading}
-        initialQuery={`${gameName}#${tagLine}`}
+        onSync={() => loadMySummoner(true)}
+        onLogout={handleLogout}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -185,7 +191,7 @@ export default function Home() {
             {/* Summoner Overview Card */}
             <SummonerProfile
               summoner={summoner}
-              onRefresh={() => loadSummoner(gameName, tagLine, true)}
+              onRefresh={() => loadMySummoner(true)}
               isRefreshing={isLoading}
             />
 
@@ -204,8 +210,8 @@ export default function Home() {
             {/* Tab Views */}
             {activeTab === "matchups" ? (
               <MatchupDashboard
-                gameName={gameName}
-                tagLine={tagLine}
+                gameName={summoner.gameName}
+                tagLine={summoner.tagLine}
                 playedChampions={summoner.playedChampions || []}
                 onEditNote={(participant) => setEditingParticipant(participant)}
                 onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
@@ -224,8 +230,50 @@ export default function Home() {
               />
             )}
           </>
-        ) : null}
+        ) : (
+          <div className="bg-white rounded-2xl border border-[#dadce0] p-12 text-center text-[#5f6368] space-y-3 shadow-sm">
+            <p className="text-sm font-semibold text-[#202124]">
+              個人専用ランクアップ分析を利用するにはサインインしてください
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-5 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-bold rounded-lg transition shadow-2xs"
+            >
+              サインインして始める
+            </button>
+          </div>
+        )}
       </main>
+
+      {/* Auth Modal (サインイン / 新規登録) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onSuccess={(user) => {
+          setIsAuthModalOpen(false);
+          setCurrentUser(user);
+          if (user.summoner) {
+            void loadMySummoner(false);
+          } else {
+            setIsLinkModalOpen(true);
+          }
+        }}
+      />
+
+      {/* Link Summoner Modal (Riot ID 登録) */}
+      <LinkSummonerModal
+        isOpen={isLinkModalOpen}
+        onSuccess={(linkedSummoner) => {
+          setIsLinkModalOpen(false);
+          setSummoner(linkedSummoner);
+          if (currentUser) {
+            setCurrentUser({
+              ...currentUser,
+              summoner: linkedSummoner,
+            });
+          }
+        }}
+      />
 
       {/* Match Detail Modal (UC: 試合詳細・タイムライングラフ・キルピン・ビルド購入時系列) */}
       <MatchDetailModal
@@ -246,6 +294,18 @@ export default function Home() {
         initialContent={editingParticipant?.matchNote?.content || ""}
         initialTag={editingParticipant?.matchNote?.matchupTag || "Hard"}
       />
+
+      {/* Riot Games 公式免責事項 (Legal Jibber Jabber 準拠) */}
+      <footer className="border-t border-[#dadce0] bg-white py-6 px-6 mt-12 text-center text-[11px] text-[#5f6368] space-y-2">
+        <div className="max-w-4xl mx-auto space-y-1 leading-relaxed">
+          <p>
+            LoLRankupLab isn&apos;t endorsed by Riot Games and doesn&apos;t reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
+          </p>
+          <p className="text-[10px] text-[#80868b]">
+            © 2026 LoLRankupLab - Personal SoloQ Improvement Companion
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

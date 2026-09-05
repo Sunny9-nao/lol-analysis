@@ -3,8 +3,19 @@ import { test, expect } from '@playwright/test';
 test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+
+    // サインインモーダルが表示された場合はデモアカウントでサインイン
+    const authModal = page.locator('[data-testid="auth-modal"]');
+    try {
+      await authModal.waitFor({ state: 'visible', timeout: 3000 });
+      await page.locator('[data-testid="demo-login-btn"]').click();
+      await page.locator('[data-testid="auth-submit-btn"]').click();
+    } catch {
+      // 既にログイン済みの場合はスルー
+    }
+
     // 画面がロードされ、サモナー情報が表示されるのを待機
-    await expect(page.locator('text=Sunny9')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Sunny9' })).toBeVisible({ timeout: 10000 });
   });
 
   test('TC-A1-01: 逆引き検索で Aatrox またはカタカナ「エイトロックス」入力時に対面得意チャンプがレコメンドされる', async ({ page }) => {
@@ -33,11 +44,11 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
   });
 
   test('TC-A2-05: Matchup Labでチャンピオンカードを展開し、過去の対戦履歴とメモ欄がはみ出さず正常に表示されること', async ({ page }) => {
-    // オーンのカードを探してスクロールしてクリック
-    const ornnTitle = page.locator('h3').filter({ hasText: 'オーン' });
-    await ornnTitle.scrollIntoViewIfNeeded();
-    await expect(ornnTitle).toBeVisible();
-    await ornnTitle.click();
+    // ガレンのカードを探してスクロールしてクリック
+    const garenTitle = page.locator('h3').filter({ hasText: 'ガレン' });
+    await garenTitle.scrollIntoViewIfNeeded();
+    await expect(garenTitle).toBeVisible();
+    await garenTitle.click();
 
     // 過去の対戦履歴見出しが表示されること
     await expect(page.locator('text=過去の対戦履歴 & メモ')).toBeVisible();
@@ -46,7 +57,7 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     await expect(page.getByRole('button', { name: '編集' }).first()).toBeVisible({ timeout: 10000 });
 
     // アコーディオンを閉じる
-    await ornnTitle.click();
+    await garenTitle.click();
   });
 
   test('TC-B5-04: 弱点・ギャップ分析タブで4象限カードをクリックすると該当試合が展開される', async ({ page }) => {
@@ -155,7 +166,7 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     await page.getByRole('button', { name: /Match History/ }).click();
 
     // 試合履歴の表示とバッジを確認
-    await expect(page.locator('text=直近 40 試合中 15 試合を表示')).toBeVisible();
+    await expect(page.locator('text=/直近 \\d+ 試合中 15 試合を表示/')).toBeVisible();
     await expect(page.locator('text=日前').first()).toBeVisible();
     await expect(page.locator('text=KDA').first()).toBeVisible();
     // レーンバッジ（TOP, JUNGLE等）が表示されていること
@@ -185,7 +196,7 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     // クリックすると30件に増加すること
     await loadMoreBtn.click();
     await expect(cards).toHaveCount(30);
-    await expect(page.locator('text=直近 40 試合中 30 試合を表示')).toBeVisible();
+    await expect(page.locator('text=/直近 \\d+ 試合中 30 試合を表示/')).toBeVisible();
   });
 
   test('TC-B2-03: マッチカードのクリックによる試合詳細モーダル（14分客観データ・購入順・メモ）の開閉', async ({ page }) => {
@@ -294,5 +305,23 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     // ESCキーで閉じること
     await page.keyboard.press('Escape');
     await expect(modal).toHaveCount(0);
+  });
+
+  test('TC-AUTH-01: ログアウトするとサインインモーダルが表示され、サインインすると自分専用のサモナー画面に復帰すること', async ({ page }) => {
+    // ヘッダーのログアウトボタンをクリック
+    const logoutBtn = page.locator('[data-testid="header-logout-btn"]');
+    await expect(logoutBtn).toBeVisible();
+    await logoutBtn.click();
+
+    // ログアウト後にサインインモーダルが表示されること
+    const authModal = page.locator('[data-testid="auth-modal"]');
+    await expect(authModal).toBeVisible();
+
+    // 再度デモログイン
+    await page.locator('[data-testid="demo-login-btn"]').click();
+    await page.locator('[data-testid="auth-submit-btn"]').click();
+
+    // 個人サモナー画面に復帰すること
+    await expect(page.getByRole('heading', { name: 'Sunny9' })).toBeVisible();
   });
 });
