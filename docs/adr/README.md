@@ -29,3 +29,4 @@ ADR（Architecture Decision Record）は、ソフトウェア開発において�
 | [0008](./0008-frontend-tech-stack-and-ui-design.md) | フロントエンド基盤の技術選定とGoogle風クリーンデザインUIの策定 | Accepted | 2026-09-05 | Next.js App Router + TypeScript + Tailwind CSSとタブ・アコーディオンUIの導入 |
 | [0009](./0009-scope-to-ranked-matches-and-queue-id.md) | 分析スコープのランクマッチ（Ranked Solo/Duo & Flex）への限定とqueue_id管理 | Accepted | 2026-09-05 | ランク向上に特化するためノーマル戦を除外しランク戦のみを集計対象化 |
 | [0010](./0010-usecase-driven-architecture-and-ui-design.md) | ソロランク向上ユースケースの実現方針と全体UI/情報設計アーキテクチャ | Accepted | 2026-09-05 | 逆引き・カンペ・直前反省・ギャップ分析等のユースケース別実現方針と3層3タブ情報設計 |
+| [0011](./0011-asynchronous-sync-solid-queue-and-postgresql.md) | 試合同期の非同期ジョブ化 (Solid Queue) と本番 PostgreSQL ハイブリッド接続設計 | Accepted | 2026-09-06 | Solid Queueによるバックグラウンド同期とDATABASE_URL対応のハイブリッドDB設計 |
