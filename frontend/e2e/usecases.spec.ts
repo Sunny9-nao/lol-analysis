@@ -34,6 +34,23 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     await expect(page.locator('text=試合前カンペ')).not.toBeVisible();
   });
 
+  test('TC-A2-05: Matchup Labでチャンピオンカードを展開し、過去の対戦履歴とメモ欄がはみ出さず正常に表示されること', async ({ page }) => {
+    // オーンのカードを探してスクロールしてクリック
+    const ornnTitle = page.locator('h3').filter({ hasText: 'オーン' });
+    await ornnTitle.scrollIntoViewIfNeeded();
+    await expect(ornnTitle).toBeVisible();
+    await ornnTitle.click();
+
+    // 過去の対戦履歴見出しが表示されること
+    await expect(page.locator('text=過去の対戦履歴 & メモ')).toBeVisible();
+
+    // 過去の試合行にKDA、ビルド、メモ編集ボタンが表示されること
+    await expect(page.getByRole('button', { name: '編集' }).first()).toBeVisible({ timeout: 10000 });
+
+    // アコーディオンを閉じる
+    await ornnTitle.click();
+  });
+
   test('TC-B5-04: 弱点・ギャップ分析タブで4象限カードをクリックすると該当試合が展開される', async ({ page }) => {
     // ギャップ分析タブをクリック
     await page.getByRole('button', { name: /Performance & Gap/ }).click();
@@ -86,21 +103,73 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
 
     // テキストエリアに【ガンク被弾】が含まれること
     const textarea = page.locator('textarea');
-    await expect(textarea).toContainText('【ガンク被弾】');
+    await expect(textarea).toHaveValue(/【ガンク被弾】/);
 
     // ESCキーを押してモーダルが閉じること
     await page.keyboard.press('Escape');
     await expect(modal).not.toBeVisible();
   });
 
-  test('TC-B2-01: 試合履歴タブで相対時間・絶対日時・GD14バッジが表示される', async ({ page }) => {
+  test('TC-A3-03: 反省メモを入力・タグ選択して「メモを保存する」を実行し、GraphQL経由で保存されUI即時反映および永続化されること', async ({ page }) => {
+    // 直前試合バナーの「メモを記録」または「メモを編集」ボタンをクリック
+    const noteBtn = page.getByRole('button', { name: /メモを(記録|編集)/ }).first();
+    await noteBtn.click();
+
+    const modal = page.locator('div[role="dialog"]');
+    await expect(modal).toBeVisible();
+
+    // 難易度タグ「Hard」をクリック
+    await page.getByRole('button', { name: 'Hard' }).click();
+
+    // 要因タグ「Lv1-3ソロキル被弾」をクリック
+    await page.getByRole('button', { name: /Lv1-3ソロキル被弾/ }).click();
+
+    // テキストエリアに追加のメモを入力
+    const textarea = page.locator('textarea');
+    await textarea.fill('【Lv1-3ソロキル被弾】 レベル2先行されて急襲された。ウェーブ管理に集中する。');
+
+    // alertが発生しないこと（エラー時は alert(`保存に失敗しました: ...`) が呼ばれる）
+    let alertMessage = '';
+    page.on('dialog', async (dialog) => {
+      alertMessage = dialog.message();
+      await dialog.dismiss();
+    });
+
+    // 「メモを保存する」ボタンをクリック
+    await page.getByRole('button', { name: /メモを保存する/ }).click();
+
+    // モーダルが正常に閉じること
+    await expect(modal).not.toBeVisible();
+    expect(alertMessage).toBe('');
+
+    // 直前試合バナーに「メモ記録済み」および入力したメモ本文が即時反映されていること
+    await expect(page.locator('text=メモ記録済み')).toBeVisible();
+    await expect(page.locator('text=レベル2先行されて急襲された').first()).toBeVisible();
+
+    // ページをリロードしても保存されたメモがDBから取得され表示されること（永続化の確認）
+    await page.reload();
+    await expect(page.locator('text=メモ記録済み')).toBeVisible();
+    await expect(page.locator('text=レベル2先行されて急襲された').first()).toBeVisible();
+  });
+
+  test('TC-B2-01: 試合履歴タブで相対時間・絶対日時・レーンバッジが表示され、カード一覧には14分差バッジや「対面」ラベルが表示されず、メモ欄がボタン化されていること', async ({ page }) => {
     // 試合履歴タブをクリック
     await page.getByRole('button', { name: /Match History/ }).click();
 
     // 試合履歴の表示とバッジを確認
     await expect(page.locator('text=直近 40 試合中 15 試合を表示')).toBeVisible();
     await expect(page.locator('text=日前').first()).toBeVisible();
-    await expect(page.locator('text=GD14:').first()).toBeVisible();
+    await expect(page.locator('text=KDA').first()).toBeVisible();
+    // レーンバッジ（TOP, JUNGLE等）が表示されていること
+    await expect(page.locator('[data-testid="match-card"]').first().locator('text=TOP').first()).toBeVisible();
+    // 一覧カード内には14分差バッジや「対面」、自明なキュー名（Ranked Solo）が出ないこと
+    await expect(page.locator('[data-testid="match-card"]').first().locator('text=14分差:')).not.toBeVisible();
+    await expect(page.locator('[data-testid="match-card"]').first().locator('text=対面')).not.toBeVisible();
+    await expect(page.locator('[data-testid="match-card"]').first().locator('text=Ranked Solo')).not.toBeVisible();
+    // ヘッダーに「CLASSIC (サモナーズリフト)」が出ないこと
+    await expect(page.locator('text=サモナーズリフト')).not.toBeVisible();
+    // メモ編集またはメモ追加ボタンが表示されていること
+    await expect(page.locator('[data-testid="match-card"]').first().getByRole('button', { name: /メモ(編集|追加)/ })).toBeVisible();
   });
 
   test('TC-B2-02: 試合履歴の初期15件表示と「さらに15試合を表示」による段階的読み込み', async ({ page }) => {
@@ -121,62 +190,83 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     await expect(page.locator('text=直近 40 試合中 30 試合を表示')).toBeVisible();
   });
 
-  test('TC-B2-03: マッチカードのクリックによる詳細情報（14分客観データ・序盤購入順）のアコーディオン展開と折りたたみ', async ({ page }) => {
+  test('TC-B2-03: マッチカードのクリックによる試合詳細モーダル（14分客観データ・購入順・メモ）の開閉', async ({ page }) => {
     // 試合履歴タブをクリック
     await page.getByRole('button', { name: /Match History/ }).click();
 
-    // 初期状態ではアコーディオン詳細パネルは表示されていないこと
-    const detailPanel = page.locator('[data-testid="match-accordion-panel"]');
-    await expect(detailPanel).toHaveCount(0);
+    // 初期状態では試合詳細モーダルは表示されていないこと
+    const modal = page.locator('[data-testid="match-detail-modal"]');
+    await expect(modal).toHaveCount(0);
 
-    // 最初のマッチカードのヘッダーをクリックして展開
+    // 最初のマッチカードをクリックしてモーダルを開く
     const firstCardHeader = page.locator('[data-testid="match-card-header"]').first();
     await firstCardHeader.click();
 
-    // アコーディオン詳細パネルが表示され、客観スタッツと購入順が表示されること
-    await expect(detailPanel).toBeVisible();
-    await expect(detailPanel.locator('text=レーン戦結果 (14分時点)')).toBeVisible();
-    await expect(detailPanel.locator('text=ゴールド / CS差 (14分時点)')).toBeVisible();
+    // 試合詳細モーダルが表示され、客観スタッツと勝敗・スコアが表示されること
+    await expect(modal).toBeVisible();
+    await expect(modal.locator('text=レーン戦結果 (14分時点)')).toBeVisible();
+    await expect(modal.locator('text=ゴールド / CS差 (14分時点)')).toBeVisible();
+    await expect(modal.locator('text=ゴールド比較タイムライン')).toBeVisible();
 
-    // 再度クリックすると折りたたまれること
+    // 閉じるボタンをクリックするとモーダルが閉じること
+    const closeBtn = modal.locator('[data-testid="modal-close-button"]');
+    await closeBtn.click();
+    await expect(modal).toHaveCount(0);
+
+    // 再度開き、ESCキーでも閉じられること
     await firstCardHeader.click();
-    await expect(detailPanel).toHaveCount(0);
+    await expect(modal).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
   });
 
-  test('TC-B2-04: マッチカード展開時に対面Gold差推移グラフ (SVG) とキル発生マーカーが描画されること', async ({ page }) => {
+  test('TC-B2-04: 試合詳細モーダル内に対面Gold差推移グラフ (SVG) が描画され、14分破線がなくキルピンが表示されること', async ({ page }) => {
     // 試合履歴タブをクリック
     await page.getByRole('button', { name: /Match History/ }).click();
 
-    // 最初のマッチカードを展開
+    // 最初のマッチカードをクリックしてモーダルを開く
     const firstCardHeader = page.locator('[data-testid="match-card-header"]').first();
     await firstCardHeader.click();
+
+    const modal = page.locator('[data-testid="match-detail-modal"]');
+    await expect(modal).toBeVisible();
 
     // グラフコンテナとヘッダーが表示されること
-    const graphContainer = page.locator('[data-testid="match-timeline-graph-container"]');
+    const graphContainer = modal.locator('[data-testid="modal-timeline-graph"]');
     await expect(graphContainer).toBeVisible();
-    await expect(graphContainer.locator('text=対面Gold差推移 & キル発生タイムライン')).toBeVisible();
+    await expect(graphContainer.locator('text=ゴールド比較タイムライン')).toBeVisible();
 
-    // SVG チャートが存在し、0G基準線や14分プレート消滅線が表示されること
+    // SVG チャートが存在し、0基準線が表示され、14分プレート消滅線は存在しないこと
     const svg = graphContainer.locator('svg');
     await expect(svg).toBeVisible();
-    await expect(graphContainer.locator('text=0G')).toBeVisible();
-    await expect(graphContainer.locator('text=14分 (プレート消滅)')).toBeVisible();
+    await expect(graphContainer.locator('text=14分 (プレート消滅)')).toHaveCount(0);
+
+    // 凡例のチェック（自有利キル、対面有利キル、直接対決）
+    await expect(graphContainer.locator('text=自有利キル')).toBeVisible();
+    await expect(graphContainer.locator('text=対面有利キル')).toBeVisible();
+    await expect(graphContainer.locator('text=直接対決')).toBeVisible();
+
+    // モーダルを閉じる
+    await page.keyboard.press('Escape');
   });
 
-  test('TC-B2-05: ビルド購入時系列の「序盤 (14分まで)」と「試合全体」のタブ切り替えが動作すること', async ({ page }) => {
+  test('TC-B2-05: 試合詳細モーダル内のビルド購入時系列の「序盤 (14分まで)」と「試合全体」のタブ切り替えが動作すること', async ({ page }) => {
     // 試合履歴タブをクリック
     await page.getByRole('button', { name: /Match History/ }).click();
 
-    // 最初のマッチカードを展開
+    // 最初のマッチカードをクリックしてモーダルを開く
     const firstCardHeader = page.locator('[data-testid="match-card-header"]').first();
     await firstCardHeader.click();
 
+    const modal = page.locator('[data-testid="match-detail-modal"]');
+    await expect(modal).toBeVisible();
+
     // ビルド購入時系列が表示されること
-    await expect(page.locator('text=ビルド購入時系列 (リコール別):')).toBeVisible();
+    await expect(modal.locator('text=ビルド購入時系列 (リコール別):')).toBeVisible();
 
     // 切り替えボタンが存在すること
-    const earlyBtn = page.getByRole('button', { name: '序盤 (14分まで)' });
-    const fullBtn = page.getByRole('button', { name: '試合全体' });
+    const earlyBtn = modal.getByRole('button', { name: '序盤 (14分まで)' });
+    const fullBtn = modal.getByRole('button', { name: '試合全体' });
     await expect(earlyBtn).toBeVisible();
     await expect(fullBtn).toBeVisible();
 
@@ -187,5 +277,24 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     // 「試合全体」をクリック
     await fullBtn.click();
     await expect(fullBtn).toHaveClass(/text-\[#1a73e8\]/);
+
+    // モーダルを閉じる
+    await page.keyboard.press('Escape');
+  });
+
+  test('TC-B2-06: 直前試合バナーの「詳細を見る」ボタンからも試合詳細モーダルが開くこと', async ({ page }) => {
+    // 直前試合バナー内の「詳細を見る」ボタンをクリック
+    const bannerDetailBtn = page.locator('[data-testid="recent-match-detail-btn"]');
+    await expect(bannerDetailBtn).toBeVisible();
+    await bannerDetailBtn.click();
+
+    // 試合詳細モーダルが表示されること
+    const modal = page.locator('[data-testid="match-detail-modal"]');
+    await expect(modal).toBeVisible();
+    await expect(modal.locator('text=ゴールド比較タイムライン')).toBeVisible();
+
+    // ESCキーで閉じること
+    await page.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
   });
 });

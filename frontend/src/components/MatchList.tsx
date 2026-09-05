@@ -7,11 +7,16 @@ import { MatchCard } from "./MatchCard";
 interface MatchListProps {
   participants: MatchParticipant[];
   onEditNote: (participant: MatchParticipant) => void;
+  onSelectMatch?: (participant: MatchParticipant) => void;
 }
 
 const PAGE_SIZE = 15;
 
-export const MatchList: React.FC<MatchListProps> = ({ participants, onEditNote }) => {
+export const MatchList: React.FC<MatchListProps> = ({
+  participants,
+  onEditNote,
+  onSelectMatch,
+}) => {
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -41,7 +46,6 @@ export const MatchList: React.FC<MatchListProps> = ({ participants, onEditNote }
         <span>
           直近 {participants.length} 試合中 {visibleParticipants.length} 試合を表示
         </span>
-        <span>CLASSIC (サモナーズリフト)</span>
       </div>
 
       <div className="space-y-3">
@@ -50,6 +54,7 @@ export const MatchList: React.FC<MatchListProps> = ({ participants, onEditNote }
             key={participant.id}
             participant={participant}
             onEditNote={onEditNote}
+            onSelectMatch={onSelectMatch}
             isExpanded={expandedId === participant.id}
             onToggle={() => handleToggleExpand(participant.id)}
           />

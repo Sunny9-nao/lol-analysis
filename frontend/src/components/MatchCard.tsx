@@ -72,15 +72,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         className="p-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 cursor-pointer select-none"
       >
       {/* 1. Result Indicator & Date */}
-      <div className="flex items-center gap-2.5 w-full sm:w-32 lg:w-32 shrink-0">
+      <div className="flex items-center gap-2.5 w-full sm:w-32 lg:w-36 shrink-0">
         <div className={`w-1.5 h-11 rounded-full shrink-0 ${isWin ? "bg-[#1a73e8]" : "bg-[#d93025]"}`} />
         <div>
           <div className="flex items-center gap-1.5">
             <span className={`font-bold text-sm ${isWin ? "text-[#1967d2]" : "text-[#c5221f]"}`}>
               {isWin ? "勝利" : "敗北"}
             </span>
-            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-[#f1f3f4] text-[#3c4043]">
-              {participant.queueName || "Solo/Duo"}
+            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#e8f0fe] text-[#1967d2] border border-[#d2e3fc]">
+              {participant.position || "TOP"}
             </span>
           </div>
           {timeInfo.relative && (
@@ -92,73 +92,79 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         </div>
       </div>
 
-      {/* 2. Matchup Champion & Spells */}
-      <div className="flex items-center gap-2 w-full sm:w-52 lg:w-56 shrink-0">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Image
-            src={myChampImg}
-            alt={participant.championName}
-            width={38}
-            height={38}
-            className="w-9 h-9 rounded-lg object-cover border border-[#dadce0]"
-          />
-          {participant.spells && participant.spells.length > 0 && (
-            <div className="flex flex-col gap-0.5">
-              {participant.spells.slice(0, 2).map((spellId, idx) => {
-                const spellName = SPELL_IMG_MAP[spellId] || "SummonerFlash";
-                return (
-                  <img
-                    key={idx}
-                    src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/${spellName}.png`}
-                    alt=""
-                    className="w-4 h-4 rounded"
-                  />
-                );
-              })}
-            </div>
-          )}
+      {/* 2. Matchup Champion & Spells (幅を十分確保し、名前のはみ出しを防止) */}
+      <div className="flex items-center gap-2 w-full sm:w-60 xl:w-68 shrink-0">
+        {/* 自分チャンピオン */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <div className="relative shrink-0">
+            <Image
+              src={myChampImg}
+              alt={participant.championName}
+              width={34}
+              height={34}
+              className="w-[34px] h-[34px] rounded-lg object-cover border border-[#dadce0]"
+            />
+            {participant.spells && participant.spells.length > 0 && (
+              <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
+                {participant.spells.slice(0, 2).map((spellId, idx) => {
+                  const spellName = SPELL_IMG_MAP[spellId] || "SummonerFlash";
+                  return (
+                    <img
+                      key={idx}
+                      src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/${spellName}.png`}
+                      alt=""
+                      className="w-3 h-3 rounded border border-white"
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <span
+              className="font-bold text-xs text-[#202124] truncate block"
+              title={participant.champion?.name || participant.championName}
+            >
+              {participant.champion?.name || participant.championName}
+            </span>
+          </div>
         </div>
 
-        <div className="min-w-0 shrink-0">
-          <span className="font-bold text-xs text-[#202124] whitespace-nowrap block">
-            {participant.champion?.name || participant.championName}
-          </span>
-          <span className="text-[10px] text-[#5f6368] font-medium block">
-            {participant.position || "TOP"}
-          </span>
-        </div>
+        <span className="text-[11px] text-[#80868b] font-semibold shrink-0 px-0.5">vs</span>
 
-        <span className="text-xs text-[#80868b] font-medium mx-1 shrink-0">vs</span>
-
+        {/* 対面チャンピオン */}
         {participant.opponentChampionName ? (
-          <div className="flex items-center gap-2 min-w-0 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
             {oppChampImg ? (
               <Image
                 src={oppChampImg}
                 alt={participant.opponentChampionName}
-                width={36}
-                height={36}
-                className="w-9 h-9 rounded-lg object-cover border border-[#dadce0] shrink-0"
+                width={34}
+                height={34}
+                className="w-[34px] h-[34px] rounded-lg object-cover border border-[#dadce0] shrink-0"
               />
             ) : (
-              <div className="w-9 h-9 rounded-lg bg-[#f1f3f4] border border-[#dadce0] flex items-center justify-center text-[10px] text-[#5f6368] font-bold shrink-0">
+              <div className="w-[34px] h-[34px] rounded-lg bg-[#f1f3f4] border border-[#dadce0] flex items-center justify-center text-[10px] text-[#5f6368] font-bold shrink-0">
                 {participant.opponentChampionName.slice(0, 3)}
               </div>
             )}
-            <div className="min-w-0">
-              <span className="font-bold text-xs text-[#202124] whitespace-nowrap block">
+            <div className="min-w-0 flex-1">
+              <span
+                className="font-bold text-xs text-[#202124] truncate block"
+                title={participant.opponentChampion?.name || participant.opponentChampionName}
+              >
                 {participant.opponentChampion?.name || participant.opponentChampionName}
               </span>
-              <span className="text-[10px] text-[#5f6368] block">対面</span>
             </div>
           </div>
         ) : (
-          <span className="text-xs text-[#5f6368] italic shrink-0">対面なし</span>
+          <div className="flex-1 text-xs text-[#80868b] italic">対面なし</div>
         )}
       </div>
 
       {/* 3. Score, CS & Gold */}
-      <div className="text-center text-xs w-full sm:w-28 lg:w-32 shrink-0">
+      <div className="text-center text-xs w-full sm:w-32 lg:w-36 shrink-0">
         <span className="font-bold text-sm text-[#202124] block">
           {participant.kills} / {participant.deaths} / {participant.assists}
         </span>
@@ -169,35 +175,20 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         >
           {participant.kdaRatio} KDA
         </span>
-        <div className="flex items-center justify-center gap-1.5 mt-0.5 flex-wrap">
-          <span className="text-[10px] text-[#5f6368] whitespace-nowrap">
-            {participant.cs} CS {participant.goldEarned ? `• ${(participant.goldEarned / 1000).toFixed(1)}k G` : ""}
-          </span>
-          {participant.goldDiffAt14 != null && (
-            <span
-              className={`text-[9px] font-bold px-1.5 py-0.2 rounded whitespace-nowrap ${
-                participant.goldDiffAt14 >= 500
-                  ? "bg-[#e6f4ea] text-[#137333] border border-[#b7e1cd]"
-                  : participant.goldDiffAt14 <= -500
-                  ? "bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]"
-                  : "bg-[#f1f3f4] text-[#5f6368] border border-[#dadce0]"
-              }`}
-            >
-              GD14: {participant.goldDiffAt14 > 0 ? `+${participant.goldDiffAt14}` : participant.goldDiffAt14}
-            </span>
-          )}
+        <div className="text-[10px] text-[#5f6368] mt-0.5 whitespace-nowrap">
+          {participant.cs} CS {participant.goldEarned ? `• ${(participant.goldEarned / 1000).toFixed(1)}k ゴールド` : ""}
         </div>
       </div>
 
-      {/* 4. Final Build */}
-      <div className="flex items-center justify-center gap-1 w-full sm:w-44 lg:w-44 shrink-0">
+      {/* 4. Final Build (アイテムサイズを拡大して圧迫感を解消) */}
+      <div className="flex items-center justify-center gap-1.5 w-full sm:w-56 lg:w-60 shrink-0">
         <div className="flex items-center gap-1">
           {Array.from({ length: 6 }).map((_, idx) => {
             const itemId = mainItems[idx] || 0;
             return (
               <div
                 key={idx}
-                className="w-6 h-6 rounded bg-[#202124] border border-[#dadce0] overflow-hidden shrink-0"
+                className="w-7 h-7 rounded-md bg-[#202124] border border-[#dadce0] overflow-hidden shrink-0 shadow-2xs"
               >
                 {itemId > 0 ? (
                   <img
@@ -216,7 +207,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
           })}
         </div>
         {/* Trinket */}
-        <div className="w-6 h-6 rounded-full bg-[#202124] border border-[#dadce0] overflow-hidden ml-1 shrink-0">
+        <div className="w-7 h-7 rounded-full bg-[#202124] border border-[#dadce0] overflow-hidden ml-1 shrink-0 shadow-2xs">
           {trinket && trinket > 0 ? (
             <img
               src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/${trinket}.png`}
@@ -229,53 +220,55 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         </div>
       </div>
 
-      {/* 5. Note Snippet / Edit Button: 残り領域を綺麗に満たしはみ出さない */}
-      <div className="flex-1 min-w-0 max-w-xs xl:max-w-sm h-11 bg-[#f8f9fa] border border-[#dadce0] rounded-lg px-3 py-2 text-xs text-[#3c4043] flex items-center justify-between gap-2">
-        <div className="truncate flex-1 min-w-0">
-          {note?.content ? (
-            <div className="flex items-center gap-1.5 truncate">
-              {note.matchupTag && (
-                <span
-                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0 ${
-                    note.matchupTag === "Hard"
-                      ? "bg-[#fef7e0] text-[#b06000] border border-[#fce8b2]"
-                      : note.matchupTag === "Easy"
-                      ? "bg-[#e6f4ea] text-[#137333] border border-[#b7e1cd]"
-                      : "bg-[#f1f3f4] text-[#5f6368] border border-[#dadce0]"
-                  }`}
-                >
-                  {note.matchupTag}
-                </span>
-              )}
-              <span className="truncate text-[#202124] text-[11px]">{note.content}</span>
-            </div>
-          ) : (
-            <span className="text-[#80868b] italic text-[11px]">（メモなし）</span>
-          )}
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEditNote(participant);
-          }}
-          className="text-[#1a73e8] hover:text-[#1557b0] text-[11px] font-bold hover:underline shrink-0 flex items-center gap-1 cursor-pointer pl-1"
-        >
-          <Edit3 className="w-3 h-3" />
-          {note?.content ? "編集" : "追加"}
-        </button>
+      {/* 5. Note Action (高さ h-8、幅 w-[94px] で統一) */}
+      <div className="shrink-0 flex items-center">
+        {note?.content ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditNote(participant);
+            }}
+            className="w-[94px] h-8 justify-center text-xs font-semibold text-[#1a73e8] bg-[#e8f0fe] hover:bg-[#d2e3fc] rounded-lg border border-[#d2e3fc] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title={`メモを編集: ${note.content}`}
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>メモ編集</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditNote(participant);
+            }}
+            className="w-[94px] h-8 justify-center text-xs font-medium text-[#5f6368] hover:text-[#1a73e8] bg-white hover:bg-[#f8f9fa] rounded-lg border border-[#dadce0] hover:border-[#1a73e8] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="反省メモを記録"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-[#80868b]" />
+            <span>メモ追加</span>
+          </button>
+        )}
       </div>
 
-      {/* Detail Indicator / Expand Toggle */}
-      <div className="hidden lg:flex items-center text-[#5f6368] hover:text-[#1a73e8] transition shrink-0">
+      {/* 6. Detail Button (メモボタンと高さ h-8、角丸 rounded-lg を完全統一) */}
+      <div className="hidden lg:flex items-center shrink-0">
         {onSelectMatch ? (
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#1a73e8] bg-[#e8f0fe] hover:bg-[#d2e3fc] px-2.5 py-1 rounded-md transition">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectMatch(participant);
+            }}
+            className="h-8 px-3 text-xs font-bold text-[#1a73e8] bg-[#e8f0fe] hover:bg-[#d2e3fc] rounded-lg border border-[#d2e3fc] transition flex items-center gap-1 cursor-pointer shadow-2xs"
+          >
             <span>詳細</span>
             <ChevronRight className="w-3.5 h-3.5" />
-          </div>
+          </button>
         ) : isExpanded ? (
           <ChevronUp className="w-5 h-5 text-[#1a73e8]" />
         ) : (
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDown className="w-5 h-5 text-[#5f6368]" />
         )}
       </div>
     </div>
