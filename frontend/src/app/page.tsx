@@ -12,6 +12,8 @@ import { MatchDetailModal } from "@/components/MatchDetailModal";
 import { RecentMatchBanner } from "@/components/RecentMatchBanner";
 import { AuthModal } from "@/components/AuthModal";
 import { LinkSummonerModal } from "@/components/LinkSummonerModal";
+import { LegalModal } from "@/components/LegalModal";
+import { DeleteAccountModal } from "@/components/DeleteAccountModal";
 import { Summoner, MatchParticipant, User } from "@/types/graphql";
 import {
   fetchGraphQL,
@@ -33,8 +35,15 @@ export default function Home() {
   // モーダル状態
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState<boolean>(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
+  const [legalModalTab, setLegalModalTab] = useState<"terms" | "privacy">("terms");
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState<boolean>(false);
   const [editingParticipant, setEditingParticipant] = useState<MatchParticipant | null>(null);
   const [selectedMatchParticipant, setSelectedMatchParticipant] = useState<MatchParticipant | null>(null);
+  const [lastSavedNote, setLastSavedNote] = useState<{
+    participantId: string;
+    matchNote: { id: string; content: string; matchupTag: string; updatedAt: string };
+  } | null>(null);
 
   // 試合履歴を降順 (最新順) にソート
   const sortedParticipants = useMemo(() => {
@@ -157,11 +166,23 @@ export default function Home() {
         matchNote: data.saveMatchNote.matchNote,
       });
     }
+
+    setLastSavedNote({
+      participantId,
+      matchNote: data.saveMatchNote.matchNote,
+    });
+  };
+
+  const handleAccountDeleted = () => {
+    setIsDeleteAccountModalOpen(false);
+    setCurrentUser(null);
+    setSummoner(null);
+    setIsAuthModalOpen(true);
   };
 
   return (
     <div className="bg-[#f8f9fa] text-[#202124] min-h-screen antialiased flex flex-col">
-      {/* Header (個人専用ダッシュボード / 同期 / ログアウト) */}
+      {/* Header (個人専用ダッシュボード / 同期 / ログアウト / アカウント削除) */}
       <Header
         user={currentUser}
         summoner={summoner}
@@ -169,6 +190,7 @@ export default function Home() {
         onSync={() => loadMySummoner(true)}
         onLogout={handleLogout}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onDeleteAccount={() => setIsDeleteAccountModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -215,6 +237,7 @@ export default function Home() {
                 playedChampions={summoner.playedChampions || []}
                 onEditNote={(participant) => setEditingParticipant(participant)}
                 onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
+                lastSavedNote={lastSavedNote}
               />
             ) : activeTab === "gap" ? (
               <GapAnalysisDashboard
@@ -295,9 +318,49 @@ export default function Home() {
         initialTag={editingParticipant?.matchNote?.matchupTag || "Hard"}
       />
 
-      {/* Riot Games 公式免責事項 (Legal Jibber Jabber 準拠) */}
-      <footer className="border-t border-[#dadce0] bg-white py-6 px-6 mt-12 text-center text-[11px] text-[#5f6368] space-y-2">
-        <div className="max-w-4xl mx-auto space-y-1 leading-relaxed">
+      {/* Legal Modal (利用規約 / プライバシーポリシー) */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        activeTab={legalModalTab}
+        onTabChange={setLegalModalTab}
+        onClose={() => setIsLegalModalOpen(false)}
+      />
+
+      {/* Delete Account Modal (アカウント・反省メモの完全削除) */}
+      <DeleteAccountModal
+        isOpen={isDeleteAccountModalOpen}
+        onClose={() => setIsDeleteAccountModalOpen(false)}
+        onDeleted={handleAccountDeleted}
+      />
+
+      {/* Riot Games 公式免責事項 (Legal Jibber Jabber 準拠) & 法務リンク */}
+      <footer className="border-t border-[#dadce0] bg-white py-6 px-6 mt-12 text-center text-[11px] text-[#5f6368] space-y-3">
+        <div className="max-w-4xl mx-auto space-y-2 leading-relaxed">
+          <div className="flex items-center justify-center gap-4 text-xs font-medium text-[#5f6368]">
+            <button
+              type="button"
+              data-testid="footer-terms-btn"
+              onClick={() => {
+                setLegalModalTab("terms");
+                setIsLegalModalOpen(true);
+              }}
+              className="hover:text-[#1a73e8] hover:underline transition cursor-pointer"
+            >
+              利用規約
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              data-testid="footer-privacy-btn"
+              onClick={() => {
+                setLegalModalTab("privacy");
+                setIsLegalModalOpen(true);
+              }}
+              className="hover:text-[#1a73e8] hover:underline transition cursor-pointer"
+            >
+              プライバシーポリシー
+            </button>
+          </div>
           <p>
             LoLRankupLab isn&apos;t endorsed by Riot Games and doesn&apos;t reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
           </p>

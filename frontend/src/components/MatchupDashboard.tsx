@@ -14,6 +14,7 @@ interface MatchupDashboardProps {
   playedChampions: PlayedChampion[];
   onEditNote: (participant: MatchParticipant) => void;
   onSelectMatch?: (participant: MatchParticipant) => void;
+  lastSavedNote?: { participantId: string; matchNote: { id: string; content: string; matchupTag: string; updatedAt: string } } | null;
 }
 
 export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
@@ -22,6 +23,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
   playedChampions,
   onEditNote,
   onSelectMatch,
+  lastSavedNote,
 }) => {
   const [selectedChampion, setSelectedChampion] = useState<string>(
     playedChampions[0]?.championName || ""
@@ -655,7 +657,10 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                       </div>
                     ) : detail && detail.participants ? (
                       <div className="space-y-3">
-                        {detail.participants.map((p) => {
+                        {detail.participants.map((rawP) => {
+                          const p = lastSavedNote && lastSavedNote.participantId === rawP.id
+                            ? { ...rawP, matchNote: lastSavedNote.matchNote }
+                            : rawP;
                           const note = p.matchNote;
                           const earlyItemGroups = groupEarlyItems(p.earlyItems);
                           return (

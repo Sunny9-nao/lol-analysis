@@ -455,3 +455,14 @@ export const LINK_SUMMONER_MUTATION = `
   }
 `;
 
+// アカウントおよび個人データの完全削除 Mutation
+export const DELETE_ACCOUNT_MUTATION = `
+  mutation DeleteAccount {
+    deleteAccount(input: {}) {
+      success
+      errors
+    }
+  }
+`;
+
+

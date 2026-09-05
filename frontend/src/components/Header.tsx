@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Zap, RefreshCw, LogOut, User as UserIcon } from "lucide-react";
+import { Zap, RefreshCw, LogOut, User as UserIcon, Trash2 } from "lucide-react";
 import { User, Summoner } from "@/types/graphql";
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   onSync?: () => void;
   onLogout?: () => void;
   onOpenAuth?: () => void;
+  onDeleteAccount?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSync,
   onLogout,
   onOpenAuth,
+  onDeleteAccount,
 }) => {
   return (
     <header className="bg-white border-b border-[#dadce0] sticky top-0 z-30 px-6 py-3 shadow-[0_1px_2px_rgba(60,64,67,0.08)]">
@@ -72,17 +74,28 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
 
-              {/* ユーザーアカウント & ログアウト */}
+              {/* ユーザーアカウント & アクション */}
               <div className="flex items-center gap-2 pl-2 border-l border-[#dadce0]">
                 <div className="text-right hidden md:block">
                   <span className="text-xs font-medium text-[#3c4043] block">{user.email}</span>
                 </div>
+                {onDeleteAccount && (
+                  <button
+                    type="button"
+                    data-testid="header-delete-account-btn"
+                    onClick={onDeleteAccount}
+                    className="p-1.5 text-[#5f6368] hover:text-[#d93025] hover:bg-[#fce8e6] rounded-lg transition cursor-pointer"
+                    title="アカウントとデータを完全削除"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
                 {onLogout && (
                   <button
                     type="button"
                     data-testid="header-logout-btn"
                     onClick={onLogout}
-                    className="p-1.5 text-[#5f6368] hover:text-[#d93025] hover:bg-[#fce8e6] rounded-lg transition cursor-pointer"
+                    className="p-1.5 text-[#5f6368] hover:text-[#202124] hover:bg-[#e8eaed] rounded-lg transition cursor-pointer"
                     title="ログアウト"
                   >
                     <LogOut className="w-4 h-4" />

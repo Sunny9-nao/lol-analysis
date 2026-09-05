@@ -324,4 +324,42 @@ test.describe('LoLRankupLab Usecases E2E Test Suite', () => {
     // 個人サモナー画面に復帰すること
     await expect(page.getByRole('heading', { name: 'Sunny9' })).toBeVisible();
   });
+
+  test('TC-LEGAL-01: フッターの「利用規約」「プライバシーポリシー」を開閉でき、タブ切り替えとESCキーで閉じられること', async ({ page }) => {
+    // フッターの「利用規約」をクリック
+    const termsBtn = page.locator('[data-testid="footer-terms-btn"]');
+    await expect(termsBtn).toBeVisible();
+    await termsBtn.click();
+
+    // モーダルが表示されること
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    await expect(page.getByRole('heading', { name: /利用規約/ })).toBeVisible();
+
+    // 「プライバシーポリシー」タブに切り替え
+    await modal.getByRole('button', { name: 'プライバシーポリシー' }).click();
+    await expect(page.getByRole('heading', { name: /プライバシーポリシー/ })).toBeVisible();
+    await expect(page.getByText('反省メモの完全秘匿について')).toBeVisible();
+
+    // ESCキーで閉じること
+    await page.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
+  });
+
+  test('TC-AUTH-02: ヘッダーのアカウント削除ボタンから削除確認モーダルが開き、キャンセルで閉じられること', async ({ page }) => {
+    // ヘッダーのアカウント削除ボタンをクリック
+    const deleteBtn = page.locator('[data-testid="header-delete-account-btn"]');
+    await expect(deleteBtn).toBeVisible();
+    await deleteBtn.click();
+
+    // 削除確認モーダルが表示されること
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'アカウントの完全削除' })).toBeVisible();
+    await expect(page.getByText('この操作は取り消せません')).toBeVisible();
+
+    // キャンセルボタンをクリックして閉じること
+    await page.getByRole('button', { name: 'キャンセル' }).click();
+    await expect(modal).toHaveCount(0);
+  });
 });
