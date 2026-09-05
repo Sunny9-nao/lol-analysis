@@ -25,7 +25,7 @@ test:
 # When DATABASE_URL is set (e.g., Render, Railway, Neon), PostgreSQL is used.
 production:
   primary: &primary_production
-    <% if ENV["DATABASE_URL"] %>
+    <% if ENV["DATABASE_URL"].present? %>
     adapter: postgresql
     url: <%= ENV["DATABASE_URL"] %>
     pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
@@ -35,9 +35,9 @@ production:
     database: storage/production.sqlite3
     <% end %>
   cache:
-    <% if ENV["SOLID_CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    <% if ENV["SOLID_CACHE_DATABASE_URL"].present? || ENV["DATABASE_URL"].present? %>
     adapter: postgresql
-    url: <%= ENV["SOLID_CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    url: <%= ENV["SOLID_CACHE_DATABASE_URL"].presence || ENV["DATABASE_URL"] %>
     pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
     timeout: 5000
     migrations_paths: db/cache_migrate
@@ -47,9 +47,9 @@ production:
     migrations_paths: db/cache_migrate
     <% end %>
   queue:
-    <% if ENV["SOLID_QUEUE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    <% if ENV["SOLID_QUEUE_DATABASE_URL"].present? || ENV["DATABASE_URL"].present? %>
     adapter: postgresql
-    url: <%= ENV["SOLID_QUEUE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    url: <%= ENV["SOLID_QUEUE_DATABASE_URL"].presence || ENV["DATABASE_URL"] %>
     pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
     timeout: 5000
     migrations_paths: db/queue_migrate
@@ -59,9 +59,9 @@ production:
     migrations_paths: db/queue_migrate
     <% end %>
   cable:
-    <% if ENV["SOLID_CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    <% if ENV["SOLID_CABLE_DATABASE_URL"].present? || ENV["DATABASE_URL"].present? %>
     adapter: postgresql
-    url: <%= ENV["SOLID_CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    url: <%= ENV["SOLID_CABLE_DATABASE_URL"].presence || ENV["DATABASE_URL"] %>
     pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
     timeout: 5000
     migrations_paths: db/cable_migrate
