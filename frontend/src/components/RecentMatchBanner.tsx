@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { MatchParticipant } from "@/types/graphql";
 import { Edit3, CheckCircle2, Clock, AlertCircle, BarChart2 } from "lucide-react";
-import { formatMatchTime } from "@/lib/format";
+import { formatMatchTime, getChampionImageUrl } from "@/lib/format";
 
 interface RecentMatchBannerProps {
   latestParticipant?: MatchParticipant | null;
@@ -24,9 +24,10 @@ export const RecentMatchBanner: React.FC<RecentMatchBannerProps> = ({
   const hasNote = Boolean(note?.content && note.content.trim().length > 0);
   const timeInfo = formatMatchTime(latestParticipant.gameCreation);
 
-  const defaultChampImg = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png";
-  const myChampImg = latestParticipant.champion?.imageUrl || defaultChampImg;
-  const oppChampImg = latestParticipant.opponentChampion?.imageUrl;
+  const myChampImg = getChampionImageUrl(latestParticipant.championName, latestParticipant.champion?.imageUrl);
+  const oppChampImg = latestParticipant.opponentChampionName
+    ? getChampionImageUrl(latestParticipant.opponentChampionName, latestParticipant.opponentChampion?.imageUrl)
+    : undefined;
   const myChampName = latestParticipant.champion?.name || latestParticipant.championName;
   const oppChampName = latestParticipant.opponentChampion?.name || latestParticipant.opponentChampionName || "対面";
 

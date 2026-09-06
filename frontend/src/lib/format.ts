@@ -22,6 +22,17 @@ export function formatMatchTime(dateStr?: string | null): { relative: string; ab
   return { relative, absolute };
 }
 
+export function getChampionImageUrl(
+  championName?: string | null,
+  customUrl?: string | null
+): string {
+  if (customUrl) return customUrl;
+  if (!championName) {
+    return "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png";
+  }
+  return `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${championName}.png`;
+}
+
 export interface PurchaseGroup {
   timeLabel: string;
   itemIds: number[];

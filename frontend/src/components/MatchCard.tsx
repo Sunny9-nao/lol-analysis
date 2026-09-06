@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { MatchParticipant } from "@/types/graphql";
 import { Edit3, ChevronDown, ChevronUp, ChevronRight, Clock, ArrowRight } from "lucide-react";
-import { formatMatchTime, groupEarlyItems } from "@/lib/format";
+import { formatMatchTime, groupEarlyItems, getChampionImageUrl } from "@/lib/format";
 import { MatchTimelineGraph } from "./MatchTimelineGraph";
 
 interface MatchCardProps {
@@ -35,9 +35,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({
   const isWin = participant.win;
   const note = participant.matchNote;
 
-  const defaultChampImg = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png";
-  const myChampImg = participant.champion?.imageUrl || defaultChampImg;
-  const oppChampImg = participant.opponentChampion?.imageUrl;
+  const myChampImg = getChampionImageUrl(participant.championName, participant.champion?.imageUrl);
+  const oppChampImg = participant.opponentChampionName
+    ? getChampionImageUrl(participant.opponentChampionName, participant.opponentChampion?.imageUrl)
+    : undefined;
   const timeInfo = formatMatchTime(participant.gameCreation);
 
   const mainItems = (participant.items || []).slice(0, 6);

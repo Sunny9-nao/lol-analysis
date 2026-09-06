@@ -6,7 +6,7 @@ import { PlayedChampion, MatchupSummary, MatchupDetail, MatchParticipant } from 
 import { fetchGraphQL, GET_MATCHUP_SUMMARIES_QUERY, GET_MATCHUP_DETAIL_QUERY, GET_COUNTER_RECOMMENDATIONS_QUERY } from "@/lib/graphql-client";
 import { ChevronDown, Edit3, Loader2, Search, AlertTriangle, Trophy, BookOpen, ShieldCheck, ArrowRight, X } from "lucide-react";
 import { CheatSheetModal } from "@/components/CheatSheetModal";
-import { groupEarlyItems } from "@/lib/format";
+import { groupEarlyItems, getChampionImageUrl } from "@/lib/format";
 
 interface MatchupDashboardProps {
   gameName: string;
@@ -241,9 +241,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
             <div className="flex items-center gap-2 flex-wrap">
               {playedChampions.map((champ) => {
                 const isSelected = champ.championName === selectedChampion;
-                const imgUrl =
-                  champ.champion?.imageUrl ||
-                  "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Jax.png";
+                const imgUrl = getChampionImageUrl(champ.championName, champ.champion?.imageUrl);
 
                 return (
                   <button
@@ -332,16 +330,14 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
                         >
                           {isTop ? "推奨 1" : `選択肢 ${idx + 1}`}
                         </span>
-                        {rec.champion?.imageUrl && (
-                          <Image
-                            src={rec.champion.imageUrl}
-                            alt={rec.championName || ""}
-                            width={28}
-                            height={28}
-                            unoptimized
-                            className="w-7 h-7 rounded object-cover"
-                          />
-                        )}
+                        <Image
+                          src={getChampionImageUrl(rec.championName, rec.champion?.imageUrl)}
+                          alt={rec.championName || ""}
+                          width={28}
+                          height={28}
+                          unoptimized
+                          className="w-7 h-7 rounded object-cover border border-[#dadce0]"
+                        />
                         <div>
                           <span className="font-bold text-xs text-[#202124] block">
                             {rec.champion?.name || rec.championName}
@@ -526,7 +522,7 @@ export const MatchupDashboard: React.FC<MatchupDashboardProps> = ({
         ) : (
           filteredAndSortedSummaries.map((summary) => {
             const isExpanded = expandedOpponent === summary.opponentChampionName;
-            const oppImg = summary.opponentChampion?.imageUrl;
+            const oppImg = getChampionImageUrl(summary.opponentChampionName, summary.opponentChampion?.imageUrl);
             const detail = detailsCache[summary.opponentChampionName];
 
             return (

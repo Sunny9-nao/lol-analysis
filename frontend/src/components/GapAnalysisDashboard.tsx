@@ -11,6 +11,7 @@ import {
   Sparkles,
   ChevronDown,
 } from "lucide-react";
+import { getChampionImageUrl } from "@/lib/format";
 
 interface GapAnalysisDashboardProps {
   participants: MatchParticipant[];
@@ -400,20 +401,18 @@ export const GapAnalysisDashboard: React.FC<GapAnalysisDashboardProps> = ({
                       {p.win ? "勝利" : "敗北"}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      {p.champion?.imageUrl && (
-                        <Image
-                          src={p.champion.imageUrl}
-                          alt={p.championName}
-                          width={24}
-                          height={24}
-                          className="w-6 h-6 rounded object-cover border border-[#dadce0]"
-                        />
-                      )}
+                      <Image
+                        src={getChampionImageUrl(p.championName, p.champion?.imageUrl)}
+                        alt={p.championName}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 rounded object-cover border border-[#dadce0]"
+                      />
                       <span className="font-bold text-[#202124]">{p.champion?.name || p.championName}</span>
                       <span className="text-[#80868b] font-medium">vs</span>
-                      {p.opponentChampion?.imageUrl && (
+                      {p.opponentChampionName && (
                         <Image
-                          src={p.opponentChampion.imageUrl}
+                          src={getChampionImageUrl(p.opponentChampionName, p.opponentChampion?.imageUrl)}
                           alt={p.opponentChampionName || ""}
                           width={24}
                           height={24}

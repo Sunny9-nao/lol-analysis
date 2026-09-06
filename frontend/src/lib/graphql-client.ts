@@ -347,20 +347,32 @@ export const MY_SUMMONER_QUERY = `
         matchId
         championName
         opponentChampionName
+        position
         win
         kills
         deaths
         assists
+        kdaRatio
         cs
         goldEarned
         totalDamageDealt
         items
         spells
-        laneOutcome
-        gameDuration
+        formattedDuration
+        gameMode
+        queueId
+        queueName
         gameCreation
-        goldDiffAt14
-        csDiffAt14
+        champion {
+          name
+          title
+          imageUrl
+        }
+        opponentChampion {
+          name
+          title
+          imageUrl
+        }
         matchNote {
           id
           content
