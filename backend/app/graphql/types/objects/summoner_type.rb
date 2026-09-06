@@ -19,6 +19,22 @@ module Types
       field :sync_status, String, null: false, description: "Background sync status (idle, syncing, failed)"
       field :sync_error, String, null: true, description: "Error message if sync failed"
 
+      def sync_status
+        if object.sync_stale?
+          object.heal_stale_sync!
+          return "failed"
+        end
+        object.sync_status
+      end
+
+      def sync_error
+        if object.sync_stale?
+          object.heal_stale_sync!
+          return "前回の同期処理がタイムアウトしました。再試行してください。"
+        end
+        object.sync_error
+      end
+
       # 直近の参加試合レコード一覧 (最新順、デフォルトはRanked Solo/Duo: 420)
       field :match_participants, [ Types::Objects::MatchParticipantType ], null: false,
         description: "Participant records with matchup and item data" do

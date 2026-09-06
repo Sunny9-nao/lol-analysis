@@ -11,6 +11,9 @@ module Mutations
       current_user = context[:current_user]
       return { success: false, errors: [ "ログインが必要です" ] } unless current_user
 
+      summoner = current_user.summoner
+      summoner&.update(sync_status: "idle", sync_error: nil) if summoner&.sync_status == "syncing"
+
       if current_user.destroy
         { success: true, errors: [] }
       else

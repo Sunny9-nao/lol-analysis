@@ -41,6 +41,8 @@ class SummonerSyncService
       profile_icon_id: sum_data["profileIconId"],
       is_private: false,
       last_synced_at: Time.current,
+      sync_status: "idle",
+      sync_error: nil,
       raw_data: { account: account, summoner: sum_data }
     )
     summoner.save!
@@ -61,6 +63,8 @@ class SummonerSyncService
     summoner.puuid ||= "private_#{Digest::SHA256.hexdigest("#{game_name}##{tag_line}")[0..31]}"
     summoner.is_private = true
     summoner.last_synced_at = Time.current
+    summoner.sync_status = "idle"
+    summoner.sync_error = nil
     summoner.save
     summoner.persisted? ? summoner : nil
   end
@@ -86,8 +90,12 @@ class SummonerSyncService
     imported_count = 0
     match_ids.each do |match_id|
       unless MatchParticipant.joins(:match).exists?(summoner: summoner, matches: { match_id: match_id })
-        sync_match(match_id: match_id, summoner: summoner, region: region)
-        imported_count += 1
+        begin
+          sync_match(match_id: match_id, summoner: summoner, region: region)
+          imported_count += 1
+        rescue StandardError => e
+          Rails.logger.warn("[SummonerSyncService#backfill_past_matches] Skipping match #{match_id} due to error: #{e.message}")
+        end
       end
     end
 

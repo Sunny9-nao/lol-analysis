@@ -17,7 +17,8 @@ module Mutations
       summoner = current_user.summoner
       return { summoner: nil, sync_status: nil, errors: [ "連携されているサモナーがありません" ] } unless summoner
 
-      if summoner.sync_status == "syncing"
+      # 2分以内のアクティブな同期中のみ二重起動をブロック（ゾンビ同期は上書き許可）
+      if summoner.currently_syncing?
         return { summoner: summoner, sync_status: "syncing", errors: [] }
       end
 

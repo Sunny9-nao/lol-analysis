@@ -48,4 +48,45 @@ RSpec.describe Summoner, type: :model do
       expect(summoner.recent_win_rate).to eq(50.0)
     end
   end
+
+  describe "#sync_stale? & #currently_syncing?" do
+    it "sync_status が idle の場合は stale ではない" do
+      summoner = build(:summoner, sync_status: "idle", updated_at: 10.minutes.ago)
+      expect(summoner.sync_stale?).to be false
+      expect(summoner.currently_syncing?).to be false
+    end
+
+    it "sync_status が syncing かつ 2分以内の場合はアクティブ同期中と判定される" do
+      summoner = create(:summoner, sync_status: "syncing", updated_at: 30.seconds.ago)
+      expect(summoner.sync_stale?).to be false
+      expect(summoner.currently_syncing?).to be true
+    end
+
+    it "sync_status が syncing かつ 2分以上前の場合は stale (ゾンビ同期) と判定される" do
+      summoner = create(:summoner, sync_status: "syncing")
+      summoner.update_columns(updated_at: 3.minutes.ago)
+      expect(summoner.sync_stale?).to be true
+      expect(summoner.currently_syncing?).to be false
+    end
+  end
+
+  describe "#heal_stale_sync!" do
+    it "stale な同期を failed に自己修復しエラーメッセージを設定する" do
+      summoner = create(:summoner, sync_status: "syncing")
+      summoner.update_columns(updated_at: 3.minutes.ago)
+
+      summoner.heal_stale_sync!
+
+      summoner.reload
+      expect(summoner.sync_status).to eq("failed")
+      expect(summoner.sync_error).to include("タイムアウト")
+    end
+
+    it "stale でない場合は何もしない" do
+      summoner = create(:summoner, sync_status: "syncing", updated_at: 10.seconds.ago)
+      summoner.heal_stale_sync!
+
+      expect(summoner.reload.sync_status).to eq("syncing")
+    end
+  end
 end

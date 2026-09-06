@@ -10,6 +10,7 @@ module Types
     field :link_summoner, mutation: Mutations::LinkSummoner
     field :sync_my_summoner, mutation: Mutations::SyncMySummoner
     field :backfill_past_matches, mutation: Mutations::BackfillPastMatches
+    field :reset_summoner_sync_status, mutation: Mutations::ResetSummonerSyncStatus
 
     # 試合反省メモの保存・更新
     field :save_match_note, mutation: Mutations::SaveMatchNote

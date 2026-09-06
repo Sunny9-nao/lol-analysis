@@ -109,6 +109,22 @@ RSpec.describe "Mutations::BackfillPastMatches", type: :request do
     expect(data["syncStatus"]).to eq("syncing")
   end
 
+  it "enqueues job if previous sync is stale (> 2 minutes)" do
+    summoner.update!(sync_status: "syncing")
+    summoner.update_columns(updated_at: 3.minutes.ago)
+    auth_headers = headers.merge("Authorization" => "Bearer #{user.auth_token}")
+
+    expect {
+      post "/graphql", params: { query: query, variables: { input: {} } }.to_json, headers: auth_headers
+    }.to have_enqueued_job(BackfillMatchesJob).with(summoner.id, count: 30)
+
+    json = JSON.parse(response.body)
+    data = json.dig("data", "backfillPastMatches")
+
+    expect(data["errors"]).to be_empty
+    expect(data["syncStatus"]).to eq("syncing")
+  end
+
   it "returns idle immediately without enqueueing if summoner is sample" do
     sample_summoner = Summoner.create!(
       puuid: "sample_sunny9",

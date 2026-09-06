@@ -22,6 +22,7 @@ import {
   SAVE_MATCH_NOTE_MUTATION,
   SYNC_MY_SUMMONER_MUTATION,
   BACKFILL_PAST_MATCHES_MUTATION,
+  RESET_SUMMONER_SYNC_STATUS_MUTATION,
   getAuthToken,
   removeAuthToken,
 } from "@/lib/graphql-client";
@@ -113,15 +114,52 @@ export default function Home() {
     }
   }, []);
 
-  // 非同期同期中のポーリング監視 (3秒間隔)
+  // 同期ステータスの強制リセット
+  const handleResetSync = useCallback(async () => {
+    try {
+      const res = await fetchGraphQL<{
+        resetSummonerSyncStatus: { success: boolean; errors: string[]; summoner: Summoner | null };
+      }>(RESET_SUMMONER_SYNC_STATUS_MUTATION, {});
+      if (res.resetSummonerSyncStatus.summoner) {
+        setSummoner(res.resetSummonerSyncStatus.summoner);
+      }
+    } catch {
+      // ネットワークやAPIエラー時もフロントエンドのステータスを確実に解除
+      setSummoner((prev) => (prev ? { ...prev, syncStatus: "idle", syncError: null } : null));
+    }
+  }, []);
+
+  // 非同期同期中のポーリング監視 (3秒間隔、最大20回 = 60秒で自動停止)
   useEffect(() => {
     if (summoner?.syncStatus !== "syncing") return;
 
+    let pollCount = 0;
+    const MAX_POLLS = 20;
+
     const interval = setInterval(async () => {
+      pollCount += 1;
+
+      if (pollCount > MAX_POLLS) {
+        clearInterval(interval);
+        setSummoner((prev) =>
+          prev
+            ? {
+                ...prev,
+                syncStatus: "failed",
+                syncError: "同期処理が制限時間（60秒）内に完了しませんでした。ネットワーク環境を確認のうえ、再試行してください。",
+              }
+            : null
+        );
+        return;
+      }
+
       try {
         const data = await fetchGraphQL<{ mySummoner: Summoner | null }>(MY_SUMMONER_QUERY, { force: false });
         if (data.mySummoner) {
           setSummoner(data.mySummoner);
+          if (data.mySummoner.syncStatus !== "syncing") {
+            clearInterval(interval);
+          }
         }
       } catch {
         // ポーリング失敗時は画面を壊さないよう握りつぶす
@@ -280,6 +318,37 @@ export default function Home() {
                 onEditNote={(participant) => setEditingParticipant(participant)}
                 onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
               />
+            )}
+
+            {/* Sync Error Banner with Retry / Reset options */}
+            {summoner.syncStatus === "failed" && (
+              <div className="bg-[#fce8e6] border border-[#fad2cf] text-[#202124] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[#d93025] mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-[#d93025]">試合同期でエラーが発生しました</p>
+                    <p className="text-[11px] text-[#5f6368]">
+                      {summoner.syncError || "同期処理が中断されたか、タイムアウトしました。"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleResetSync}
+                    className="px-3 py-1.5 bg-white hover:bg-[#f8f9fa] text-[#5f6368] hover:text-[#202124] text-xs font-medium rounded-xl border border-[#dadce0] transition cursor-pointer"
+                  >
+                    リセット
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTriggerSync}
+                    className="px-3 py-1.5 bg-[#d93025] hover:bg-[#b3261e] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-2xs"
+                  >
+                    再同期を試す
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* Navigation Tabs */}

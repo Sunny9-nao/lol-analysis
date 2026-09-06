@@ -514,5 +514,23 @@ export const BACKFILL_PAST_MATCHES_MUTATION = `
   }
 `;
 
+// スタックした同期ステータスを強制解除する Mutation
+export const RESET_SUMMONER_SYNC_STATUS_MUTATION = `
+  mutation ResetSummonerSyncStatus {
+    resetSummonerSyncStatus(input: {}) {
+      success
+      errors
+      summoner {
+        id
+        gameName
+        tagLine
+        syncStatus
+        syncError
+      }
+    }
+  }
+`;
+
+
 
 

@@ -18,6 +18,7 @@ module Mutations
       summoner = SummonerSyncService.new.sync(game_name: game_name.strip, tag_line: tag_line.strip, force: true)
 
       if summoner&.persisted?
+        summoner.update!(sync_status: "idle", sync_error: nil) if summoner.sync_status == "syncing"
         current_user.update!(summoner: summoner)
         { user: current_user, summoner: summoner, errors: [] }
       else
