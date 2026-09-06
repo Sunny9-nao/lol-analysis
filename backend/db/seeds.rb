@@ -38,3 +38,6 @@ ActiveRecord::Base.transaction do
 end
 
 puts "完了: #{imported_count} 体のチャンピオンマスタをインポートしました。"
+
+# 開発・評価用サンプルサモナー（Sunny9#hono）および対面分析データのシード
+require_relative "sample_matchups_seed"

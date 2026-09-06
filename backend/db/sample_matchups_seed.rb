@@ -27,7 +27,7 @@ CHAMPION_MASTERS = {
   "Riven" => { name: "リヴェン", title: "放浪の追放者" },
   "Yasuo" => { name: "ヤスオ", title: "許されざる者" },
   "Illaoi" => { name: "イラオイ", title: "大海神の神官" }
-}.freeze
+}.freeze unless defined?(CHAMPION_MASTERS)
 
 CHAMPION_MASTERS.each do |c_name, info|
   champ = Champion.find_or_initialize_by(champion_name: c_name)
@@ -132,7 +132,14 @@ MATCH_DATA = [
   [ "Renekton", "Illaoi", false, 1, 5, 0, 140, 21, [ 6630 ], "Hard", "触手（E）抜かれたら絶対引くこと。殴り合ったら魂ごと破壊される。" ],
   [ "Renekton", "Illaoi", false, 2, 6, 1, 160, 23, [ 6630 ], "Hard", "相手ウルト発動時に飛び込んでしまい触手乱舞で即死。R見たら即Eで逃げる。" ],
   [ "Renekton", "Illaoi", true, 5, 2, 4, 210, 27, [ 6630, 3053, 3047 ], "Hard", "触手Eをサイドステップで避け続け、外した瞬間だけ殴るヒット＆アウェイ徹底。" ]
-].freeze
+].freeze unless defined?(MATCH_DATA)
+
+# テストユーザーを作成してサモナーに紐付け
+test_user = User.find_or_initialize_by(email: "test@example.com")
+test_user.password = "password123"
+test_user.summoner = summoner
+test_user.save!
+puts "=== テストユーザーを作成しました: test@example.com / password123 (Auth Token: #{test_user.auth_token}) ==="
 
 imported_count = 0
 ActiveRecord::Base.transaction do
@@ -173,7 +180,7 @@ ActiveRecord::Base.transaction do
     participant.save!
 
     if note_content.present?
-      note = participant.match_note || participant.build_match_note
+      note = MatchNote.find_or_initialize_by(match_participant: participant, user: test_user)
       note.assign_attributes(
         content: note_content,
         matchup_tag: tag,
@@ -186,12 +193,5 @@ ActiveRecord::Base.transaction do
     imported_count += 1
   end
 end
-
-# テストユーザーを作成してサモナーに紐付け
-test_user = User.find_or_initialize_by(email: "test@example.com")
-test_user.password = "password123"
-test_user.summoner = summoner
-test_user.save!
-puts "=== テストユーザーを作成しました: test@example.com / password123 (Auth Token: #{test_user.auth_token}) ==="
 
 puts "=== 完了: #{imported_count} 試合分のリアルな対面分析サンプルデータを投入しました！ ==="

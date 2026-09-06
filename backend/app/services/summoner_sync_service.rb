@@ -11,6 +11,11 @@ class SummonerSyncService
   def sync(game_name:, tag_line:, force: false)
     summoner = Summoner.find_by(game_name: game_name, tag_line: tag_line)
 
+    # 開発・レビュー用サンプルサモナー（puuid が sample_ で始まる場合）は外部APIを呼ばずに即返却
+    if summoner.present? && summoner.puuid&.start_with?("sample_")
+      return summoner
+    end
+
     # 1時間以内に同期済みかつforceでなければDBから即返却
     if summoner.present? && !force && summoner.last_synced_at.present? && summoner.last_synced_at > 1.hour.ago
       return summoner
@@ -50,10 +55,14 @@ class SummonerSyncService
   rescue RiotApiClient::AccountNotFoundError
     nil
   rescue RiotApiClient::PrivateAccountError
-    # 非公開アカウントの場合
+    # 非公開アカウントの場合 (puuid を生成して確実に保存)
+    require "digest"
     summoner ||= Summoner.find_or_initialize_by(game_name: game_name, tag_line: tag_line)
-    summoner.update(is_private: true, last_synced_at: Time.current)
-    summoner
+    summoner.puuid ||= "private_#{Digest::SHA256.hexdigest("#{game_name}##{tag_line}")[0..31]}"
+    summoner.is_private = true
+    summoner.last_synced_at = Time.current
+    summoner.save
+    summoner.persisted? ? summoner : nil
   end
 
   private
