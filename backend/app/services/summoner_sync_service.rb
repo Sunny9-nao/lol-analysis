@@ -93,6 +93,8 @@ class SummonerSyncService
         begin
           sync_match(match_id: match_id, summoner: summoner, region: region)
           imported_count += 1
+          # 低メモリ環境（Railway 512MB）でのOOMクラッシュ防止のため定期的にGC実行
+          GC.start if (imported_count % 5).zero?
         rescue StandardError => e
           Rails.logger.warn("[SummonerSyncService#backfill_past_matches] Skipping match #{match_id} due to error: #{e.message}")
         end
@@ -150,7 +152,7 @@ class SummonerSyncService
       game_duration: info["gameDuration"],
       game_creation: game_creation_time,
       raw_info: detail,
-      raw_timeline: timeline
+      raw_timeline: nil
     )
 
     # 2. 該当プレイヤーと対面プレイヤーの特定
@@ -196,7 +198,10 @@ class SummonerSyncService
       gold_diff_at_14: timeline_insights[:gold_diff_at_14],
       cs_diff_at_14: timeline_insights[:cs_diff_at_14],
       lane_outcome: timeline_insights[:lane_outcome],
-      early_items: timeline_insights[:early_items]
+      early_items: timeline_insights[:early_items],
+      gold_timeline: timeline_insights[:gold_timeline],
+      kill_events: timeline_insights[:kill_events],
+      item_timeline: timeline_insights[:item_timeline]
     )
   end
 end

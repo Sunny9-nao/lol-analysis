@@ -20,13 +20,19 @@ RUN apt-get update -qq && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Set production environment variables and enable jemalloc for reduced memory usage and latency.
+# Set production environment variables and enable jemalloc and lean GC for 512MB RAM environments (Railway).
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
-    SOLID_QUEUE_IN_PUMA="true"
+    SOLID_QUEUE_IN_PUMA="true" \
+    MALLOC_ARENA_MAX="2" \
+    MALLOC_CONF="dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:2" \
+    RUBY_GC_HEAP_GROWTH_FACTOR="1.1" \
+    RUBY_GC_MALLOC_LIMIT="16777216" \
+    RUBY_YJIT_ENABLE="0" \
+    RAILS_MAX_THREADS="2"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build

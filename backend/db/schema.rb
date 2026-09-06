@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_235000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_010000) do
   create_table "champions", force: :cascade do |t|
     t.string "champion_name"
     t.datetime "created_at", null: false
@@ -43,7 +43,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_235000) do
     t.json "early_items"
     t.integer "gold_diff_at_14"
     t.integer "gold_earned", default: 0, null: false
+    t.json "gold_timeline"
+    t.json "item_timeline"
     t.json "items"
+    t.json "kill_events"
     t.integer "kills", default: 0, null: false
     t.string "lane_outcome"
     t.integer "match_id", null: false
