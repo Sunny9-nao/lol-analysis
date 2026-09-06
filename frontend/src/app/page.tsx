@@ -21,6 +21,7 @@ import {
   MY_SUMMONER_QUERY,
   SAVE_MATCH_NOTE_MUTATION,
   SYNC_MY_SUMMONER_MUTATION,
+  BACKFILL_PAST_MATCHES_MUTATION,
   getAuthToken,
   removeAuthToken,
 } from "@/lib/graphql-client";
@@ -91,6 +92,24 @@ export default function Home() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(`同期リクエストの開始に失敗しました: ${errorMessage}`);
+    }
+  }, []);
+
+  // 過去試合の追加バックフィル非同期開始 (+30試合)
+  const handleBackfillPastMatches = useCallback(async () => {
+    try {
+      const res = await fetchGraphQL<{ backfillPastMatches: { syncStatus: string; errors: string[] } }>(
+        BACKFILL_PAST_MATCHES_MUTATION,
+        { count: 30 }
+      );
+      if (res.backfillPastMatches.errors && res.backfillPastMatches.errors.length > 0) {
+        setError(res.backfillPastMatches.errors.join(", "));
+      } else {
+        setSummoner((prev) => (prev ? { ...prev, syncStatus: "syncing" } : null));
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`過去試合の取得リクエストに失敗しました: ${errorMessage}`);
     }
   }, []);
 
@@ -287,6 +306,8 @@ export default function Home() {
                 participants={sortedParticipants}
                 onEditNote={(participant) => setEditingParticipant(participant)}
                 onSelectMatch={(participant) => setSelectedMatchParticipant(participant)}
+                onBackfillMatches={handleBackfillPastMatches}
+                isBackfilling={summoner.syncStatus === "syncing"}
               />
             )}
           </>

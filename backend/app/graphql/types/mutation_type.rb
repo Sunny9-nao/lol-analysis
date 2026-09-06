@@ -9,6 +9,7 @@ module Types
     # サモナー連携・同期
     field :link_summoner, mutation: Mutations::LinkSummoner
     field :sync_my_summoner, mutation: Mutations::SyncMySummoner
+    field :backfill_past_matches, mutation: Mutations::BackfillPastMatches
 
     # 試合反省メモの保存・更新
     field :save_match_note, mutation: Mutations::SaveMatchNote

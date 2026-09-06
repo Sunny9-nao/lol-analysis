@@ -498,4 +498,21 @@ export const SYNC_MY_SUMMONER_MUTATION = `
   }
 `;
 
+// 過去の試合を遡って追加取得する Mutation (30試合単位)
+export const BACKFILL_PAST_MATCHES_MUTATION = `
+  mutation BackfillPastMatches($count: Int) {
+    backfillPastMatches(input: { count: $count }) {
+      syncStatus
+      errors
+      summoner {
+        id
+        gameName
+        tagLine
+        syncStatus
+      }
+    }
+  }
+`;
+
+
 

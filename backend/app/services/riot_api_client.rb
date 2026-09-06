@@ -110,8 +110,8 @@ class RiotApiClient
     get_json(host_for(platform), path)
   end
 
-  def fetch_match_ids_by_puuid(puuid, count: 5, queue: nil, region: "asia")
-    path = "/lol/match/v5/matches/by-puuid/#{puuid}/ids?start=0&count=#{count}"
+  def fetch_match_ids_by_puuid(puuid, start: 0, count: 5, queue: nil, region: "asia")
+    path = "/lol/match/v5/matches/by-puuid/#{puuid}/ids?start=#{start}&count=#{count}"
     path += "&queue=#{queue}" if queue.present?
     get_json(host_for(region), path)
   end

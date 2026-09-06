@@ -159,4 +159,34 @@ RSpec.describe SummonerSyncService, type: :service do
       end
     end
   end
+
+  describe "#backfill_past_matches" do
+    let(:summoner) { create(:summoner, game_name: "TestUser", tag_line: "JP1", puuid: "test-backfill-puuid") }
+
+    before do
+      allow(mock_client).to receive(:send).with(:infer_platform, "JP1").and_return("jp1")
+      allow(mock_client).to receive(:send).with(:infer_region, "jp1").and_return("asia")
+    end
+
+    it "指定オフセットから未登録の過去試合を取得して保存すること" do
+      allow(mock_client).to receive(:fetch_match_ids_by_puuid)
+        .with("test-backfill-puuid", start: 0, count: 30, queue: 420, region: "asia")
+        .and_return([ "JP1_PAST_001", "JP1_PAST_002" ])
+
+      detail1 = { "info" => { "gameMode" => "CLASSIC", "gameDuration" => 1500, "gameCreation" => 1_700_000_000_000, "queueId" => 420, "participants" => [ { "puuid" => "test-backfill-puuid", "championName" => "Jax", "win" => true } ] } }
+      detail2 = { "info" => { "gameMode" => "CLASSIC", "gameDuration" => 1600, "gameCreation" => 1_699_900_000_000, "queueId" => 420, "participants" => [ { "puuid" => "test-backfill-puuid", "championName" => "Darius", "win" => false } ] } }
+
+      allow(mock_client).to receive(:fetch_match_detail).with("JP1_PAST_001", region: "asia").and_return(detail1)
+      allow(mock_client).to receive(:fetch_match_timeline).with("JP1_PAST_001", region: "asia").and_return(nil)
+      allow(mock_client).to receive(:fetch_match_detail).with("JP1_PAST_002", region: "asia").and_return(detail2)
+      allow(mock_client).to receive(:fetch_match_timeline).with("JP1_PAST_002", region: "asia").and_return(nil)
+
+      expect {
+        result = service.backfill_past_matches(summoner, count: 30, queue: 420)
+        expect(result[:imported_count]).to eq(2)
+        expect(result[:has_more]).to be false
+      }.to change(Match, :count).by(2)
+       .and change(MatchParticipant, :count).by(2)
+    end
+  end
 end

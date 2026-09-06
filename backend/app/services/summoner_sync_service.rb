@@ -45,8 +45,8 @@ class SummonerSyncService
     )
     summoner.save!
 
-    # 4. 直近のソロ/デュオランク試合を取得して保存 (最新40件)
-    match_ids = client.fetch_match_ids_by_puuid(puuid, count: 40, queue: 420, region: region)
+    # 4. 直近のソロ/デュオランク試合を取得して保存 (最新30件)
+    match_ids = client.fetch_match_ids_by_puuid(puuid, count: 30, queue: 420, region: region)
     match_ids.each do |match_id|
       sync_match(match_id: match_id, summoner: summoner, region: region)
     end
@@ -63,6 +63,42 @@ class SummonerSyncService
     summoner.last_synced_at = Time.current
     summoner.save
     summoner.persisted? ? summoner : nil
+  end
+
+  # 過去の試合をチャンク（指定件数: デフォルト30件）単位で遡って取得する
+  def backfill_past_matches(summoner, count: 30, queue: 420)
+    return { imported_count: 0, has_more: false } if summoner.blank? || summoner.is_private || summoner.puuid.blank?
+
+    # サンプルサモナーの場合は外部APIを呼ばない
+    if summoner.puuid.start_with?("sample_")
+      return { imported_count: 0, has_more: false }
+    end
+
+    platform = client.send(:infer_platform, summoner.tag_line)
+    region   = client.send(:infer_region, platform)
+
+    # 既にDBに保存されている試合数をオフセットとして使用
+    offset = summoner.match_participants.joins(:match).where(matches: { queue_id: queue }).count
+
+    match_ids = client.fetch_match_ids_by_puuid(summoner.puuid, start: offset, count: count, queue: queue, region: region)
+    return { imported_count: 0, has_more: false } if match_ids.blank?
+
+    imported_count = 0
+    match_ids.each do |match_id|
+      unless MatchParticipant.joins(:match).exists?(summoner: summoner, matches: { match_id: match_id })
+        sync_match(match_id: match_id, summoner: summoner, region: region)
+        imported_count += 1
+      end
+    end
+
+    summoner.update!(last_synced_at: Time.current)
+    {
+      imported_count: imported_count,
+      has_more: match_ids.size >= count
+    }
+  rescue RiotApiClient::RiotApiError => e
+    Rails.logger.error("[SummonerSyncService#backfill_past_matches] #{e.message}")
+    raise e
   end
 
   private
