@@ -33,19 +33,35 @@ module Types
       field :item_timeline, [ Types::Objects::EarlyItemType ], null: true, description: "Full-game item purchase timeline"
 
       def early_items
-        object.early_items.presence || timeline_analysis[:early_items]
+        if object.has_attribute?(:early_items)
+          object.early_items.presence || timeline_analysis[:early_items]
+        else
+          timeline_analysis[:early_items]
+        end
       end
 
       def gold_timeline
-        object.gold_timeline.presence || timeline_analysis[:gold_timeline]
+        if object.has_attribute?(:gold_timeline)
+          object.gold_timeline.presence || timeline_analysis[:gold_timeline]
+        else
+          timeline_analysis[:gold_timeline]
+        end
       end
 
       def kill_events
-        object.kill_events.presence || timeline_analysis[:kill_events]
+        if object.has_attribute?(:kill_events)
+          object.kill_events.presence || timeline_analysis[:kill_events]
+        else
+          timeline_analysis[:kill_events]
+        end
       end
 
       def item_timeline
-        object.item_timeline.presence || timeline_analysis[:item_timeline]
+        if object.has_attribute?(:item_timeline)
+          object.item_timeline.presence || timeline_analysis[:item_timeline]
+        else
+          timeline_analysis[:item_timeline]
+        end
       end
 
       field :match_note, Types::Objects::MatchNoteType, null: true, description: "Personal note for this match"
