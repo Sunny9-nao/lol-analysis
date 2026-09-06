@@ -3,7 +3,7 @@
 class SummonerSyncService
   attr_reader :client
 
-  def initialize(client: RiotApiClient.new)
+  def initialize(client: nil)
     @client = client
   end
 
@@ -66,6 +66,10 @@ class SummonerSyncService
   end
 
   private
+
+  def client
+    @client ||= RiotApiClient.new
+  end
 
   def sync_match(match_id:, summoner:, region:)
     match = Match.find_by(match_id: match_id)

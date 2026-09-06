@@ -83,6 +83,14 @@ RSpec.describe "GraphQL searchSummoner", type: :request do
   end
 
   context "サモナーが存在せず外部APIも404の場合" do
+    around do |example|
+      original_api_key = ENV["RIOT_API_KEY"]
+      ENV["RIOT_API_KEY"] = "RGAPI-test-api-key"
+      example.run
+    ensure
+      ENV["RIOT_API_KEY"] = original_api_key
+    end
+
     before do
       stub_request(:get, %r{https://asia\.api\.riotgames\.com/riot/account/v1/accounts/by-riot-id/.*})
         .to_return(status: 404, body: '{"status":{"message":"Not Found","status_code":404}}')
