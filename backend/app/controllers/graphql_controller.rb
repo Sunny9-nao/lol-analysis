@@ -48,11 +48,4 @@ class GraphqlController < ApplicationController
       raise ArgumentError, "Unexpected parameter: #{variables_param}"
     end
   end
-
-  def handle_error_in_development(e)
-    logger.error e.message
-    logger.error e.backtrace.join("\n")
-
-    render json: { errors: [ { message: e.message, backtrace: e.backtrace } ], data: {} }, status: 500
-  end
 end
