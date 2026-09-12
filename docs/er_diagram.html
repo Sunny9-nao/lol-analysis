@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database ER Diagram - lol-analysis</title>
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --border-color: #dadce0;
+      --border-dark: #b0b4b9;
+      --text-main: #202124;
+      --text-sub: #5f6368;
+      --text-muted: #80868b;
+      
+      --accent-blue: #1a73e8;
+      --accent-blue-bg: #e8f0fe;
+      --accent-blue-border: #d2e3fc;
+
+      --status-success: #137333;
+      --status-success-bg: #e6f4ea;
+      --status-success-border: #b7e1cd;
+
+      --status-danger: #d93025;
+      --status-danger-bg: #fce8e6;
+      --status-danger-border: #fad2cf;
+
+      --status-warning: #b06000;
+      --status-warning-bg: #fef7e0;
+      --status-warning-border: #fce8b2;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 3px rgba(60,64,67,0.1), 0 1px 2px rgba(60,64,67,0.06);
+      --shadow-md: 0 4px 6px -1px rgba(60,64,67,0.1), 0 2px 4px -1px rgba(60,64,67,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(60,64,67,0.15), 0 4px 6px -2px rgba(60,64,67,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Top Nav */
+    .top-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-sub);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .nav-btn:hover {
+      background: #f1f3f4;
+      color: var(--text-main);
+    }
+
+    .nav-btn.primary {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+    }
+
+    .nav-btn.primary:hover {
+      background: #1557b0;
+    }
+
+    /* Layout */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      height: calc(100vh - 61px);
+    }
+
+    @media (max-width: 1100px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    /* Canvas Area */
+    .canvas-container {
+      position: relative;
+      overflow: auto;
+      background: #f8f9fa;
+      padding: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .diagram-board {
+      position: relative;
+      width: 1000px;
+      min-height: 840px;
+    }
+
+    /* SVG Overlay for Relation Lines */
+    .relation-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1000px;
+      height: 840px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .relation-line {
+      stroke: #80868b;
+      stroke-width: 2;
+      fill: none;
+      transition: stroke 0.2s, stroke-width 0.2s;
+    }
+
+    .relation-line.highlight {
+      stroke: var(--accent-blue);
+      stroke-width: 3.5;
+    }
+
+    /* Table Cards */
+    .er-table {
+      position: absolute;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      width: 290px;
+      overflow: hidden;
+      z-index: 20;
+      cursor: pointer;
+      transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    }
+
+    .er-table:hover {
+      border-color: #80868b;
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .er-table.selected {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px var(--accent-blue-border), var(--shadow-md);
+    }
+
+    /* Specific Table Positioning */
+    #table-user {
+      top: 40px;
+      left: 40px;
+    }
+
+    #table-match-note {
+      top: 40px;
+      left: 400px;
+      width: 300px;
+    }
+
+    #table-summoner {
+      top: 360px;
+      left: 40px;
+      width: 300px;
+    }
+
+    #table-match-participant {
+      top: 320px;
+      left: 400px;
+      width: 330px;
+    }
+
+    #table-match {
+      top: 40px;
+      left: 770px;
+      width: 280px;
+    }
+
+    #table-champion {
+      top: 480px;
+      left: 780px;
+      width: 270px;
+    }
+
+    /* Table Header */
+    .table-header {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      color: #ffffff;
+    }
+
+    .header-user { background: #2e7d32; }
+    .header-summoner { background: #1b5e20; }
+    .header-match-participant { background: #1565c0; }
+    .header-match { background: #e65100; }
+    .header-match-note { background: #c62828; }
+    .header-champion { background: #455a64; }
+
+    .table-type {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Columns List */
+    .column-list {
+      list-style: none;
+      font-size: 12px;
+    }
+
+    .column-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    .column-item:last-child {
+      border-bottom: none;
+    }
+
+    .col-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: SFMono-Regular, Menlo, Monaco, monospace;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .col-right {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    /* Badges */
+    .key-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    .key-pk { background: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
+    .key-fk { background: #e6f4ea; color: #137333; border: 1px solid #b7e1cd; }
+    .key-uk { background: #fef7e0; color: #b06000; border: 1px solid #fce8b2; }
+
+    /* Side Panel */
+    .side-panel {
+      background: #ffffff;
+      border-left: 1px solid var(--border-color);
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .panel-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-section {
+      margin-bottom: 24px;
+    }
+
+    .panel-section h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .detail-card {
+      background: #f8f9fa;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .detail-card strong {
+      color: var(--text-main);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .rel-list {
+      list-style: none;
+      font-size: 13px;
+    }
+
+    .rel-item {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rel-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+    }
+
+    /* JSON Drawer Preview */
+    .json-preview {
+      background: #202124;
+      color: #e8eaed;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-family: SFMono-Regular, Menlo, Monaco, monospace;
+      font-size: 11px;
+      overflow-x: auto;
+      max-height: 220px;
+      white-space: pre;
+    }
+
+    .legend-bar {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-sub);
+      padding: 8px 16px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    /* Icons */
+    .icon {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vertical-align: middle;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">
+          <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          lol-analysis Database ER Diagram
+        </div>
+        <div class="header-subtitle">テーブル関係性・外部キー制約・ハイブリッドJSON設計の全貌</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="backend_reading_map.html" class="nav-btn">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        読解マップに戻る
+      </a>
+      <button class="nav-btn primary" onclick="resetSelection()">選択解除</button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="main-layout">
+    
+    <!-- Canvas Area -->
+    <div class="canvas-container">
+      <div class="diagram-board" id="diagram-board">
+
+        <!-- SVG Connectors -->
+        <svg class="relation-svg" id="relation-svg">
+          <defs>
+            <marker id="marker-circle" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+              <circle cx="5" cy="5" r="3" fill="#80868b" />
+            </marker>
+            <marker id="marker-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#80868b" />
+            </marker>
+            <marker id="marker-arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1a73e8" />
+            </marker>
+          </defs>
+
+          <!-- 1. User -> Summoner (Optional 1:1) -->
+          <path id="line-user-summoner" class="relation-line" d="M 180 260 L 180 360" marker-start="url(#marker-circle)" marker-end="url(#marker-arrow)" />
+
+          <!-- 2. User -> MatchNote (1:N) -->
+          <path id="line-user-note" class="relation-line" d="M 330 140 L 400 140" marker-start="url(#marker-circle)" marker-end="url(#marker-arrow)" />
+
+          <!-- 3. Summoner -> MatchParticipant (1:N) -->
+          <path id="line-summoner-part" class="relation-line" d="M 340 460 L 400 460" marker-start="url(#marker-circle)" marker-end="url(#marker-arrow)" />
+
+          <!-- 4. Match -> MatchParticipant (1:N) -->
+          <path id="line-match-part" class="relation-line" d="M 770 170 L 680 170 L 680 320" marker-start="url(#marker-circle)" marker-end="url(#marker-arrow)" />
+
+          <!-- 5. MatchParticipant -> MatchNote (1:1 per user) -->
+          <path id="line-part-note" class="relation-line" d="M 550 320 L 550 255" marker-start="url(#marker-circle)" marker-end="url(#marker-arrow)" />
+
+          <!-- 6. MatchParticipant -> Champion (N:1, champion_name) -->
+          <path id="line-part-champ" class="relation-line" d="M 730 520 L 780 520" marker-start="url(#marker-circle)" marker-end="url(#marker-arrow)" />
+        </svg>
+
+        <!-- TABLE 1: User -->
+        <div class="er-table" id="table-user" onclick="selectTable('user')">
+          <div class="table-header header-user">
+            <span>users</span>
+            <span class="table-type">Auth</span>
+          </div>
+          <ul class="column-list">
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-pk">PK</span> id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-uk">UK</span> email</span>
+              <span class="col-right">string</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-uk">UK</span> auth_token</span>
+              <span class="col-right">string</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> summoner_id</span>
+              <span class="col-right">integer (opt)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">password_digest</span>
+              <span class="col-right">string</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- TABLE 2: Summoner -->
+        <div class="er-table" id="table-summoner" onclick="selectTable('summoner')">
+          <div class="table-header header-summoner">
+            <span>summoners</span>
+            <span class="table-type">Player</span>
+          </div>
+          <ul class="column-list">
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-pk">PK</span> id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-uk">UK</span> puuid</span>
+              <span class="col-right">string</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">game_name</span>
+              <span class="col-right">string (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">tag_line</span>
+              <span class="col-right">string (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">summoner_level</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">profile_icon_id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">sync_status</span>
+              <span class="col-right">string (idle/...)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">sync_error</span>
+              <span class="col-right">string</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">last_synced_at</span>
+              <span class="col-right">datetime</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">is_private</span>
+              <span class="col-right">boolean</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">raw_data</span>
+              <span class="col-right">json</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- TABLE 3: MatchNote -->
+        <div class="er-table" id="table-match-note" onclick="selectTable('match_note')">
+          <div class="table-header header-match-note">
+            <span>match_notes</span>
+            <span class="table-type">Personal</span>
+          </div>
+          <ul class="column-list">
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-pk">PK</span> id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> user_id</span>
+              <span class="col-right">integer (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> match_participant_id</span>
+              <span class="col-right">integer (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">matchup_tag</span>
+              <span class="col-right">string (Hard/...)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">content</span>
+              <span class="col-right">text</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- TABLE 4: MatchParticipant (Core Hub) -->
+        <div class="er-table" id="table-match-participant" onclick="selectTable('match_participant')">
+          <div class="table-header header-match-participant">
+            <span>match_participants</span>
+            <span class="table-type">Hub / Core</span>
+          </div>
+          <ul class="column-list">
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-pk">PK</span> id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> summoner_id</span>
+              <span class="col-right">integer (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> match_id</span>
+              <span class="col-right">integer (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> champion_name</span>
+              <span class="col-right">string (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-fk">FK</span> opponent_champion_name</span>
+              <span class="col-right">string (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">position</span>
+              <span class="col-right">string (TOP...)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">win</span>
+              <span class="col-right">boolean (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">kills / deaths / assists</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">gold_diff_at_14</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">cs_diff_at_14</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">lane_outcome</span>
+              <span class="col-right">string (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">early_items / items</span>
+              <span class="col-right">json</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">gold_timeline / kill_events</span>
+              <span class="col-right">json</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">raw_participant</span>
+              <span class="col-right">json (156項目)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- TABLE 5: Match -->
+        <div class="er-table" id="table-match" onclick="selectTable('match')">
+          <div class="table-header header-match">
+            <span>matches</span>
+            <span class="table-type">Match Info</span>
+          </div>
+          <ul class="column-list">
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-pk">PK</span> id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-uk">UK</span> match_id</span>
+              <span class="col-right">string (idx)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">queue_id</span>
+              <span class="col-right">integer (420)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">game_mode</span>
+              <span class="col-right">string</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">game_duration</span>
+              <span class="col-right">integer (sec)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">game_creation</span>
+              <span class="col-right">datetime</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">raw_info</span>
+              <span class="col-right">json (全10人分)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">raw_timeline</span>
+              <span class="col-right">json</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- TABLE 6: Champion -->
+        <div class="er-table" id="table-champion" onclick="selectTable('champion')">
+          <div class="table-header header-champion">
+            <span>champions</span>
+            <span class="table-type">Master</span>
+          </div>
+          <ul class="column-list">
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-pk">PK</span> id</span>
+              <span class="col-right">integer</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left"><span class="key-badge key-uk">UK</span> champion_name</span>
+              <span class="col-right">string (e.g. Ahri)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">name</span>
+              <span class="col-right">string (アーリ)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">title</span>
+              <span class="col-right">string (九尾の狐)</span>
+            </li>
+            <li class="column-item">
+              <span class="col-left">image_url</span>
+              <span class="col-right">string</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Side Detail Drawer -->
+    <aside class="side-panel" id="side-panel">
+      <div id="panel-content-default">
+        <div class="panel-title">テーブルを選択してください</div>
+        <div class="panel-subtitle">左側のテーブルをクリックすると、設計意図・リレーション・JSON構造の詳細が表示されます。</div>
+
+        <div class="panel-section">
+          <h3>全体設計の特徴 (ADR 0003 準拠)</h3>
+          <div class="detail-card">
+            <strong>ハイブリッド・データモデリング</strong>
+            Riot Games API の試合生データ（10人分の膨大な情報）は <code>matches.raw_info</code> にそのまま保存。
+            分析や検索で頻繁にソート・絞り込みを行う項目（勝敗、14分時点の差、対面チャンピオン名）のみを <code>match_participants</code> の正規化カラムとして切り出しています。
+          </div>
+          <div class="detail-card">
+            <strong>中心ハブ: match_participants</strong>
+            「どのプレイヤーが」「どの試合で」「誰と戦ったか」の全データを集約。ユーザーの反省メモ（<code>match_notes</code>）もこのレコードに紐付きます。
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>キー記号の凡例</h3>
+          <ul style="list-style: none; font-size: 12px;">
+            <li style="margin-bottom: 6px;"><span class="key-badge key-pk">PK</span> : Primary Key (主キー)</li>
+            <li style="margin-bottom: 6px;"><span class="key-badge key-fk">FK</span> : Foreign Key (外部キー)</li>
+            <li><span class="key-badge key-uk">UK</span> : Unique Key (一意制約)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="panel-content-detail" style="display: none;">
+        <!-- Dynamic Content Injected via JS -->
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    const tableData = {
+      user: {
+        name: "users",
+        role: "認証・ログイン管理",
+        desc: "ユーザーアカウントを管理します。Railsの has_secure_token により auth_token を発行し、GraphQL APIの Bearer 認証ヘッダーとして使用します。",
+        relations: [
+          { target: "summoners", type: "0..1 (Optional)", desc: "1人のユーザーは自身のRiotアカウント（Summoner）を1つ連携可能" },
+          { target: "match_notes", type: "1..N", desc: "ユーザーが作成した試合反省メモの所有権" }
+        ],
+        points: [
+          "summoner_id は nullable。ユーザー登録直後はサモナーが紐づいておらず、後から linkSummoner ミューテーションで連携します。",
+          "auth_token にユニークインデックスが付与されており、リクエスト毎の認証を高速に行います。"
+        ]
+      },
+      summoner: {
+        name: "summoners",
+        role: "サモナー（LoLプレイヤー）プロフィール",
+        desc: "Riot Gamesのプレイヤー単位のエンティティ。PUUIDによって一意に識別されます。定期的に最新試合と同期されます。",
+        relations: [
+          { target: "users", type: "0..1", desc: "連携しているWebログインユーザー" },
+          { target: "match_participants", type: "1..N", desc: "サモナーが参加した各試合の記録レコード" },
+          { target: "matches", type: "N..M (through match_participants)", desc: "参加した試合データ" }
+        ],
+        points: [
+          "sync_status (idle, syncing, failed) で非同期ジョブの進行状態を管理。",
+          "sync_stale? メソッドにより、2分以上同期中のまま固まったゾンビタスクを自動修復 (heal_stale_sync!) します。",
+          "raw_data に Riot API Account-V1 / Summoner-V4 の生データをキャッシュ。"
+        ]
+      },
+      match_participant: {
+        name: "match_participants",
+        role: "【中心ハブ】試合ごとのプレイヤー戦績",
+        desc: "本アプリケーションで最も重要な中核テーブル。1試合における特定サモナーの成績、対面チャンピオン、時系列差分を保持します。",
+        relations: [
+          { target: "summoners", type: "N..1 (FK: summoner_id)", desc: "対象のサモナー" },
+          { target: "matches", type: "N..1 (FK: match_id)", desc: "対象の試合" },
+          { target: "match_notes", type: "1..N (1..1 per user)", desc: "この試合に対する反省メモ" },
+          { target: "champions", type: "N..1 (FK: champion_name)", desc: "使用チャンピオン" }
+        ],
+        points: [
+          "gold_diff_at_14, cs_diff_at_14, lane_outcome は TimelineAnalysisService が試合取り込み時に事前計算して格納。",
+          "early_items には序盤購入アイテム、gold_timeline には分ごとのゴールド推移、kill_events には対面キル/被キル分類ログをJSONで保持。",
+          "summoner_id と match_id の複合ユニーク制約により二重登録を防止。"
+        ],
+        jsonSample: `{
+  "lane_outcome": "win",
+  "gold_diff_at_14": 1250,
+  "cs_diff_at_14": 24,
+  "early_items": [
+    {"timestamp": "02:15", "itemId": 1055},
+    {"timestamp": "05:40", "itemId": 3006}
+  ],
+  "kill_events": [
+    {
+      "minute": 6.2,
+      "category": "solo_kill_opp",
+      "label": "対面キル",
+      "killer": "Ahri",
+      "victim": "Syndra"
+    }
+  ]
+}`
+      },
+      match: {
+        name: "matches",
+        role: "試合メタデータ & 生データJSON",
+        desc: "Riot Gamesの1試合全体の情報。10人のプレイヤー間で共有されるデータです。",
+        relations: [
+          { target: "match_participants", type: "1..N", desc: "この試合に参加したプレイヤー記録" }
+        ],
+        points: [
+          "queue_id: 420 が Ranked Solo/Duo。対面分析ではこのキューのみを対象として集計します（ADR 0009）。",
+          "raw_info に Riot API Match-V5 の10人分フルJSONを保持しているため、後から新しい指標を計算したくなった際にも外部APIの再呼び出しが不要です。"
+        ]
+      },
+      match_note: {
+        name: "match_notes",
+        role: "試合反省メモ & 相性タグ",
+        desc: "ユーザーが自身の試合に対して記録する振り返りノート。ユーザーIDと参加IDの組み合わせで一意です。",
+        relations: [
+          { target: "users", type: "N..1 (FK: user_id)", desc: "作成したユーザー" },
+          { target: "match_participants", type: "N..1 (FK: match_participant_id)", desc: "対象の試合参加レコード" }
+        ],
+        points: [
+          "matchup_tag に 'Hard', 'Even', 'Easy' を保存。MatchupAnalysisService で対面ごとのタグ件数が集計され、天敵ランキングに反映されます。",
+          "認可制御により、ユーザー自身のサモナーが参加した試合にのみ作成・編集が許可されます。"
+        ]
+      },
+      champion: {
+        name: "champions",
+        role: "チャンピオンマスタデータ",
+        desc: "League of Legends 公式 Data Dragon (CDN) から同期したマスタデータ（全160体以上）。",
+        relations: [
+          { target: "match_participants", type: "1..N (via champion_name)", desc: "自チャンピオンおよび相手チャンピオン" }
+        ],
+        points: [
+          "champion_name (英語キー: 'Ahri') で MatchParticipant と論理リレーション。",
+          "name (日本語名: 'アーリ')、title ('九尾の狐')、image_url (アイコンURL) を提供します。"
+        ]
+      }
+    };
+
+    const relationMap = {
+      user: ["line-user-summoner", "line-user-note"],
+      summoner: ["line-user-summoner", "line-summoner-part"],
+      match_participant: ["line-summoner-part", "line-match-part", "line-part-note", "line-part-champ"],
+      match: ["line-match-part"],
+      match_note: ["line-user-note", "line-part-note"],
+      champion: ["line-part-champ"]
+    };
+
+    function selectTable(tableKey) {
+      // Highlight Table Cards
+      document.querySelectorAll('.er-table').forEach(t => t.classList.remove('selected'));
+      const targetTable = document.getElementById('table-' + tableKey.replace('_', '-'));
+      if (targetTable) targetTable.classList.add('selected');
+
+      // Highlight Relation Lines
+      document.querySelectorAll('.relation-line').forEach(l => {
+        l.classList.remove('highlight');
+        l.setAttribute('marker-end', 'url(#marker-arrow)');
+      });
+
+      const activeLines = relationMap[tableKey] || [];
+      activeLines.forEach(lineId => {
+        const line = document.getElementById(lineId);
+        if (line) {
+          line.classList.add('highlight');
+          line.setAttribute('marker-end', 'url(#marker-arrow-active)');
+        }
+      });
+
+      // Update Side Panel
+      const data = tableData[tableKey];
+      if (!data) return;
+
+      document.getElementById('panel-content-default').style.display = 'none';
+      const detailContainer = document.getElementById('panel-content-detail');
+      detailContainer.style.display = 'block';
+
+      let relationsHtml = data.relations.map(r => `
+        <li class="rel-item">
+          <div>
+            <strong>${r.target}</strong>
+            <div style="font-size: 11px; color: var(--text-sub);">${r.desc}</div>
+          </div>
+          <span class="rel-badge">${r.type}</span>
+        </li>
+      `).join('');
+
+      let pointsHtml = data.points.map(p => `<li style="margin-bottom: 6px;">${p}</li>`).join('');
+
+      let jsonBlock = "";
+      if (data.jsonSample) {
+        jsonBlock = `
+          <div class="panel-section">
+            <h3>格納されるJSONデータ構造（実例）</h3>
+            <div class="json-preview">${data.jsonSample}</div>
+          </div>
+        `;
+      }
+
+      detailContainer.innerHTML = `
+        <div class="panel-title">${data.name}</div>
+        <div class="panel-subtitle">${data.role}</div>
+
+        <div class="panel-section">
+          <h3>概要と役割</h3>
+          <p style="font-size: 13px; color: var(--text-sub); line-height: 1.6;">${data.desc}</p>
+        </div>
+
+        <div class="panel-section">
+          <h3>関連リレーション</h3>
+          <ul class="rel-list">${relationsHtml}</ul>
+        </div>
+
+        <div class="panel-section">
+          <h3>設計上の注目ポイント</h3>
+          <ul style="font-size: 13px; color: var(--text-sub); padding-left: 18px; line-height: 1.6;">
+            ${pointsHtml}
+          </ul>
+        </div>
+
+        ${jsonBlock}
+      `;
+    }
+
+    function resetSelection() {
+      document.querySelectorAll('.er-table').forEach(t => t.classList.remove('selected'));
+      document.querySelectorAll('.relation-line').forEach(l => {
+        l.classList.remove('highlight');
+        l.setAttribute('marker-end', 'url(#marker-arrow)');
+      });
+      document.getElementById('panel-content-default').style.display = 'block';
+      document.getElementById('panel-content-detail').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -45,6 +45,28 @@ class RiotApiClient
       until_time = @rate_limit_mutex.synchronize { @rate_limited_until }
       until_time.present? && until_time > Time.current
     end
+
+    # タグラインからプラットフォーム（例: jp1, kr, na1）を判定する純粋ロジック
+    def infer_platform(tag_line)
+      tag = tag_line.to_s.upcase
+      case tag
+      when "KR", "KR1" then "kr"
+      when "JP", "JP1" then "jp1"
+      when "NA", "NA1" then "na1"
+      when "EUW", "EUW1" then "euw1"
+      else "jp1"
+      end
+    end
+
+    # プラットフォームから広域ルーティングリージョン（asia, americas, europe）を判定する純粋ロジック
+    def infer_region(platform)
+      case platform.to_s.downcase
+      when "kr", "jp1" then "asia"
+      when "na1", "br1", "la1", "la2" then "americas"
+      when "euw1", "eun1", "tr1", "ru" then "europe"
+      else "asia"
+      end
+    end
   end
 
   attr_reader :api_key
@@ -181,22 +203,10 @@ class RiotApiClient
   end
 
   def infer_platform(tag_line)
-    tag = tag_line.to_s.upcase
-    case tag
-    when "KR", "KR1" then "kr"
-    when "JP", "JP1" then "jp1"
-    when "NA", "NA1" then "na1"
-    when "EUW", "EUW1" then "euw1"
-    else "jp1"
-    end
+    self.class.infer_platform(tag_line)
   end
 
   def infer_region(platform)
-    case platform.to_s.downcase
-    when "kr", "jp1" then "asia"
-    when "na1", "br1", "la1", "la2" then "americas"
-    when "euw1", "eun1", "tr1", "ru" then "europe"
-    else "asia"
-    end
+    self.class.infer_region(platform)
   end
 end

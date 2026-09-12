@@ -28,8 +28,8 @@ class SummonerSyncService
     puuid = account["puuid"]
 
     # 2. サモナー詳細（レベル・アイコン）を取得
-    platform = client.send(:infer_platform, tag_line)
-    region   = client.send(:infer_region, platform)
+    platform = RiotApiClient.infer_platform(tag_line)
+    region   = RiotApiClient.infer_region(platform)
     sum_data = client.fetch_summoner_by_puuid(puuid, platform: platform)
 
     # 3. Summoner レコードを Upsert
@@ -78,8 +78,8 @@ class SummonerSyncService
       return { imported_count: 0, has_more: false }
     end
 
-    platform = client.send(:infer_platform, summoner.tag_line)
-    region   = client.send(:infer_region, platform)
+    platform = RiotApiClient.infer_platform(summoner.tag_line)
+    region   = RiotApiClient.infer_region(platform)
 
     # 既にDBに保存されている試合数をオフセットとして使用
     offset = summoner.match_participants.joins(:match).where(matches: { queue_id: queue }).count
