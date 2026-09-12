@@ -1,8 +1,72 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+# Require custom project-specific cops
+require:
+  - ./lib/rubocop/cop/custom/no_raw_puts_in_services.rb
+  - ./lib/rubocop/cop/custom/no_private_send.rb
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "bin/*"
+    - "db/schema.rb"
+    - "db/queue_schema.rb"
+    - "db/cable_schema.rb"
+    - "db/cache_schema.rb"
+    - "node_modules/**/*"
+    - "vendor/**/*"
+
+# プロジェクト固有カスタムLint: Service/Jobでの生puts/printを禁止
+Custom/NoRawPutsInServices:
+  Enabled: true
+
+# プロジェクト固有カスタムLint: 本番・テスト両方でprivateをこじ開けるsend/__send__を完全禁止
+Custom/NoPrivateSend:
+  Enabled: true
+
+# カプセル化破壊防止ハーネス: send の使用を禁止し、public_send または通常のメソッド呼び出しを強制
+Style/Send:
+  Enabled: true
+  Description: "privateメソッドを隠蔽打破するためにsendを使用することを禁止し、public_sendまたは適切な設計を強制する"
+
+Lint/SendWithMixinArgument:
+  Enabled: true
+
+# 不要な disable コメントの放置を防止（AIによる握りつぶし防止）
+Lint/RedundantCopDisableDirective:
+  Enabled: true
+
+# デバッグ用コード（debugger, binding.pry等）の混入防止
+Lint/Debugger:
+  Enabled: true
+
+# 本番コードでの標準出力（puts / p）の放置防止
+Rails/Output:
+  Enabled: true
+  Exclude:
+    - "db/seeds.rb"
+    - "db/sample_matchups_seed.rb"
+
+# セキュリティ
+Security/Eval:
+  Enabled: true
+
+Security/Open:
+  Enabled: true
+
+# パフォーマンス最適化
+Performance/Count:
+  Enabled: true
+
+Performance/Detect:
+  Enabled: true
+
+Performance/RedundantMerge:
+  Enabled: true
+
+# Rubyらしい述語メソッド名（is_xxx? ではなく xxx? を推奨）
+Naming/PredicatePrefix:
+  Enabled: true
+
